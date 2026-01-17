@@ -18,10 +18,23 @@ use <components/honeycomb.scad>
 use <components/rack_ears.scad>
 use <components/joiners.scad>
 
+// New snap-fit and assembly components
+use <components/print_config.scad>
+use <components/dovetail.scad>
+use <components/magnets.scad>
+use <components/dowel_pins.scad>
+use <components/screws.scad>
+
+// New rack mount types
+use <rack_mounts/tray.scad>
+use <rack_mounts/enclosed_box.scad>
+use <rack_mounts/patch_panel.scad>
+use <rack_mounts/angle_bracket.scad>
+
 /* [Example Selection] */
 
 // Select which example to display
-example = 21; // [1:Basic Shapes, 2:Standalone Faceplate, 3:Faceplate with Ears, 4:Keystone Jacks, 5:Fan Grills, 6:Fan Cutout with Holes, 7:Cage Structure, 8:Cage with Honeycomb, 9:Preview Guides, 10:Two Stacked Cages, 11:Side-by-Side Cages, 12:Dual Fan Faceplate, 13:Keystone Patch Panel, 14:Simple Rack Ears, 15:Fusion Rack Ears, 16:Faceplate with Rack Ears, 17:Full Cage with Fusion Ears, 18:Faceplate with Bottom Hooks, 19:Joiner Parts, 20:Joiner Assembled View, 21:Modular Faceplate Sections]
+example = 27; // [1:Basic Shapes, 2:Standalone Faceplate, 3:Faceplate with Ears, 4:Keystone Jacks, 5:Fan Grills, 6:Fan Cutout with Holes, 7:Cage Structure, 8:Cage with Honeycomb, 9:Preview Guides, 10:Two Stacked Cages, 11:Side-by-Side Cages, 12:Dual Fan Faceplate, 13:Keystone Patch Panel, 14:Simple Rack Ears, 15:Fusion Rack Ears, 16:Faceplate with Rack Ears, 17:Full Cage with Fusion Ears, 18:Faceplate with Bottom Hooks, 19:Joiner Parts, 20:Joiner Assembled View, 21:Modular Faceplate Sections, 22:Dovetail Connectors, 23:Magnetic Snap Points, 24:Dowel Pin Alignment, 25:Enhanced Screw System, 26:Rack Tray Mount, 27:Enclosed Box Mount, 28:Patch Panel Mount, 29:Angle Bracket Mount, 30:All Snap-Fit Features]
 
 
 /* [Hide] */
@@ -732,6 +745,370 @@ module example_modular_faceplate_sections()
 
 
 // ============================================================
+// EXAMPLE 22: Dovetail Connectors
+// Snap-fit dovetail joints for tool-less assembly
+// ============================================================
+module example_dovetail_connectors()
+{
+    // Male dovetail plug
+    color("SteelBlue")
+    translate([-40, 0, 0])
+    dovetail(
+        topWidth = 8,
+        bottomWidth = 12,
+        height = 6,
+        length = 30,
+        headExtension = 2,
+        baseExtension = 2,
+        frontFaceLength = 3,
+        frontFaceScale = 0.5
+    );
+
+    // Female socket in a block
+    color("Coral")
+    translate([20, 0, 0])
+    difference() {
+        cube([30, 30, 35], center = true);
+        translate([0, 0, -5])
+        dovetail_socket(
+            topWidth = 8,
+            bottomWidth = 12,
+            height = 6,
+            length = 40
+        );
+    }
+
+    // Sliding dovetail rail
+    color("LightGreen")
+    translate([0, 50, 0])
+    dovetail_rail(length = 80, width = 15, height = 6);
+
+    // Slider block
+    color("Gold")
+    translate([30, 50, 0])
+    dovetail_slider(length = 20, width = 15, height = 10);
+}
+
+
+// ============================================================
+// EXAMPLE 23: Magnetic Snap Points
+// Neodymium magnet pockets for snap-fit assembly
+// ============================================================
+module example_magnetic_snap_points()
+{
+    // Panel with corner magnets
+    color("LightGray")
+    translate([-40, 0, 0])
+    difference() {
+        cube([60, 40, 4]);
+        translate([0, 0, 4 - 2])
+        magnet_corners(width = 60, height = 40, inset = 8);
+    }
+
+    // Mating panel with corner magnets
+    color("SteelBlue")
+    translate([40, 0, 0])
+    difference() {
+        cube([60, 40, 4]);
+        translate([0, 0, 4 - 2])
+        magnet_corners(width = 60, height = 40, inset = 8);
+    }
+
+    // Magnet boss (raised mounting point)
+    color("Coral")
+    translate([0, 60, 0])
+    magnet_boss(bossRadius = 6, bossHeight = 10);
+
+    // Linear magnet array
+    color("Gold")
+    translate([0, 80, 0])
+    difference() {
+        cube([100, 15, 4], center = true);
+        translate([0, 0, 2])
+        magnet_array_linear(count = 4, spacing = 20);
+    }
+}
+
+
+// ============================================================
+// EXAMPLE 24: Dowel Pin Alignment
+// Precision alignment pins for multi-part assembly
+// ============================================================
+module example_dowel_pin_alignment()
+{
+    // Part A with pins
+    color("SteelBlue")
+    translate([-50, 0, 0])
+    union() {
+        cube([50, 35, 4]);
+        translate([0, 0, 4])
+        alignment_pair_diagonal(width = 50, height = 35, part = "pins");
+    }
+
+    // Part B with sockets
+    color("Coral")
+    translate([20, 0, 0])
+    difference() {
+        cube([50, 35, 4]);
+        translate([0, 0, 0])
+        alignment_pair_diagonal(width = 50, height = 35, part = "sockets");
+    }
+
+    // Pin boss
+    color("LightGreen")
+    translate([0, 60, 0])
+    dowel_pin_boss(bossRadius = 5, bossHeight = 4, pinRadius = 1.5, pinHeight = 8);
+
+    // Socket boss
+    color("Gold")
+    translate([30, 60, 0])
+    dowel_socket_boss(bossRadius = 5, bossHeight = 4, pinRadius = 1.5, socketDepth = 10);
+
+    // Filament pin (uses 1.75mm 3D printer filament)
+    color("Purple")
+    translate([60, 60, 0])
+    filament_pin_175();
+}
+
+
+// ============================================================
+// EXAMPLE 25: Enhanced Screw System
+// Hex nut pockets, countersunk holes, and bridging support
+// ============================================================
+module example_enhanced_screw_system()
+{
+    // M5 clearance hole
+    color("Red", 0.5)
+    translate([0, 0, 0])
+    screw_hole(screwType = "M5", depth = 15);
+
+    // Countersunk hole
+    color("Orange", 0.5)
+    translate([20, 0, 5])
+    countersunk_hole(screwType = "M4");
+
+    // Hex nut pocket
+    color("Yellow", 0.5)
+    translate([40, 0, 0])
+    hex_nut_pocket(screwType = "M5", openSide = true);
+
+    // Visual hex nut
+    translate([40, 0, 0])
+    hex_nut_visual(screwType = "M5");
+
+    // Block with through hole and nut pocket
+    color("LightGray")
+    translate([70, -15, 0])
+    difference() {
+        cube([30, 30, 15]);
+        translate([15, 15, 15])
+        screw_with_nut(screwType = "M4", thickness = 15, countersunk = true);
+    }
+
+    // Rectangle screw pattern
+    color("SteelBlue")
+    translate([0, 50, 0])
+    difference() {
+        cube([60, 40, 5]);
+        translate([10, 10, 0])
+        screw_pattern_rect(screwType = "M3", width = 40, height = 20, depth = 6, countersunk = true);
+    }
+}
+
+
+// ============================================================
+// EXAMPLE 26: Rack Tray Mount
+// Simple tray with front-rail mounting
+// ============================================================
+module example_rack_tray()
+{
+    // Basic 2U tray with ventilation
+    color("SteelBlue")
+    rack_tray(
+        u = 2,
+        trayWidth = 140,
+        trayDepth = 100,
+        frontLipHeight = 12,
+        backLipHeight = 8,
+        ventilation = true
+    );
+
+    // Tray with device mount points
+    color("Coral")
+    translate([0, 130, 0])
+    rack_tray(
+        u = 1,
+        trayWidth = 100,
+        trayDepth = 80,
+        mountPoints = [[20, 25], [80, 25], [20, 55], [80, 55]],
+        mountPointType = "M3",
+        mountPointElevation = 5
+    );
+}
+
+
+// ============================================================
+// EXAMPLE 27: Enclosed Box Mount
+// Side rails and front plate for devices without mounting holes
+// ============================================================
+module example_enclosed_box_mount()
+{
+    // Assembled view with visualization
+    enclosed_box_system(
+        boxWidth = 140,
+        boxHeight = 28,
+        boxDepth = 100,
+        visualize = true,
+        splitForPrint = false
+    );
+
+    // Parts separated for printing
+    translate([0, 140, 0])
+    enclosed_box_system(
+        boxWidth = 140,
+        boxHeight = 28,
+        boxDepth = 100,
+        visualize = false,
+        splitForPrint = true
+    );
+}
+
+
+// ============================================================
+// EXAMPLE 28: Patch Panel Mount
+// Keystone module patch panel
+// ============================================================
+module example_patch_panel()
+{
+    // 6-port patch panel (Type 1 keystones)
+    color("SteelBlue")
+    patch_panel(
+        slots = [1, 1, 1, 1, 1, 1],
+        u = 2,
+        centered = true
+    );
+
+    // Mixed slot types
+    color("Coral")
+    translate([0, 120, 0])
+    patch_panel(
+        slots = [1, 1, 2, 3, 1, 1],  // Type1, Type1, Type2, Blank, Type1, Type1
+        u = 2
+    );
+
+    // 8-port panel
+    color("LightGreen")
+    translate([0, 240, 0])
+    patch_panel(
+        slots = [for (i = [0:7]) 1],
+        u = 2
+    );
+}
+
+
+// ============================================================
+// EXAMPLE 29: Angle Bracket Mount
+// L-shaped brackets for equipment with existing mount holes
+// ============================================================
+module example_angle_bracket()
+{
+    // Assembled bracket pair with equipment visualization
+    angle_brackets(
+        boxWidth = 140,
+        boxDepth = 100,
+        u = 2,
+        visualize = true,
+        splitForPrint = false
+    );
+
+    // Brackets separated for printing
+    translate([0, 140, 0])
+    angle_brackets(
+        boxWidth = 140,
+        boxDepth = 100,
+        u = 2,
+        splitForPrint = true
+    );
+
+    // Adjustable bracket with slotted holes
+    color("Coral")
+    translate([200, 0, 0])
+    adjustable_angle_bracket(
+        depth = 100,
+        height = 40,
+        u = 2
+    );
+
+    // Universal mounting plate
+    color("Gold")
+    translate([200, 130, 0])
+    universal_mount_plate(
+        width = 100,
+        depth = 80
+    );
+}
+
+
+// ============================================================
+// EXAMPLE 30: All Snap-Fit Features Combined
+// Demonstrates dovetails, magnets, and dowel pins together
+// ============================================================
+module example_all_snap_fit_features()
+{
+    // Base plate with all features
+    color("LightGray")
+    translate([0, 0, 0])
+    difference() {
+        cube([120, 80, 5]);
+
+        // Corner magnet pockets
+        translate([0, 0, 5 - 2])
+        magnet_corners(width = 120, height = 80, inset = 10);
+
+        // Center screw hole with nut pocket
+        translate([60, 40, 5])
+        screw_with_nut(screwType = "M4", thickness = 5);
+    }
+
+    // Dovetail connector on one side
+    color("SteelBlue")
+    translate([120, 35, 0])
+    rotate([0, 0, 0])
+    dovetail(topWidth = 6, bottomWidth = 10, height = 5, length = 15);
+
+    // Dowel pins on corners
+    color("Coral")
+    translate([10, 10, 5])
+    dowel_pin_3mm();
+
+    color("Coral")
+    translate([110, 70, 5])
+    dowel_pin_3mm();
+
+    // Matching plate that would mate with this one
+    color("Gold", 0.5)
+    translate([0, 100, 0])
+    difference() {
+        cube([120, 80, 5]);
+
+        // Magnet sockets
+        translate([0, 0, 5 - 2])
+        magnet_corners(width = 120, height = 80, inset = 10);
+
+        // Dovetail socket
+        translate([0, 35, 0])
+        dovetail_socket(topWidth = 6, bottomWidth = 10, height = 5, length = 20);
+
+        // Dowel sockets
+        translate([10, 10, 0])
+        dowel_socket_3mm(depth = 8);
+        translate([110, 70, 0])
+        dowel_socket_3mm(depth = 8);
+    }
+}
+
+
+// ============================================================
 // Render selected example
 // ============================================================
 if (example == 1) example_basic_shapes();
@@ -755,3 +1132,12 @@ else if (example == 18) example_faceplate_with_bottom_hooks();
 else if (example == 19) example_joiner_parts();
 else if (example == 20) example_joiner_assembled();
 else if (example == 21) example_modular_faceplate_sections();
+else if (example == 22) example_dovetail_connectors();
+else if (example == 23) example_magnetic_snap_points();
+else if (example == 24) example_dowel_pin_alignment();
+else if (example == 25) example_enhanced_screw_system();
+else if (example == 26) example_rack_tray();
+else if (example == 27) example_enclosed_box_mount();
+else if (example == 28) example_patch_panel();
+else if (example == 29) example_angle_bracket();
+else if (example == 30) example_all_snap_fit_features();

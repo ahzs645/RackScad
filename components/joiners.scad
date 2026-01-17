@@ -5,8 +5,6 @@
  * M5 screws and hex nuts. Creates a raised bracket on the faceplate edge
  * that allows two sections to be screwed together.
  *
- * Based on modular rack panel joint design.
- *
  * Hardware Requirements:
  * - 3x or 6x M5 screws (recommended length: 10-16mm)
  * - 3x or 6x M5 hex nuts (8mm across flats)
@@ -33,19 +31,18 @@ M5_HEX_NUT_POCKET_AF = 8.4;    // Hex nut pocket with clearance
 M5_HEX_NUT_POCKET_DEPTH = 4.5; // Hex nut pocket depth with clearance
 
 // EIA-310 standard
-EIA_UNIT_HEIGHT = 44.45;       // 1U = 44.45mm
-EIA_PANEL_HEIGHT = 43.66;      // Panel height (1U minus clearance)
+_EIA_UNIT_HEIGHT = 44.45;      // 1U = 44.45mm
+_EIA_PANEL_HEIGHT = 43.66;     // Panel height (1U minus clearance)
 
-// Bracket dimensions
-BRACKET_WIDTH = 20;            // Width of the bracket (along faceplate edge)
-BRACKET_DEPTH = 20;            // How far bracket extends inward from faceplate
-BRACKET_THICKNESS = 8;         // Thickness of bracket wall
-BRACKET_CORNER_RADIUS = 3;     // Rounded corner radius on top
-FACEPLATE_THICKNESS = 4;       // Default faceplate thickness
+// Bracket dimensions (defaults)
+_BRACKET_WIDTH = 20;           // Width of the bracket (along faceplate edge)
+_BRACKET_DEPTH = 20;           // How far bracket extends inward from faceplate
+_BRACKET_THICKNESS = 8;        // Thickness of bracket wall
+_BRACKET_ROUNDING = 2;         // Edge rounding radius
+_FACEPLATE_THICKNESS = 4;      // Default faceplate thickness
 
 // Screw spacing
-SCREW_VERTICAL_SPACING = 12;   // Vertical spacing between screws
-SCREW_EDGE_MARGIN = 8;         // Distance from bracket edge to screw center
+_SCREW_VERTICAL_SPACING = 12;  // Vertical spacing between screws
 
 
 // ============================================================================
@@ -55,18 +52,14 @@ SCREW_EDGE_MARGIN = 8;         // Distance from bracket edge to screw center
 /**
  * Calculate screw Y positions based on unit height
  * Returns positions for 3 screws per U, centered vertically
- *
- * @param unit_height - Height in rack units (1, 2, etc.)
- * @return Array of Y positions for screws
  */
 function get_bracket_screw_positions(unit_height) =
     let(
-        panel_height = unit_height * EIA_PANEL_HEIGHT,
         screw_count = unit_height * 3,
-        total_spacing = (screw_count - 1) * SCREW_VERTICAL_SPACING,
+        total_spacing = (screw_count - 1) * _SCREW_VERTICAL_SPACING,
         start_y = -total_spacing / 2
     )
-    [for (i = [0 : screw_count - 1]) start_y + (i * SCREW_VERTICAL_SPACING)];
+    [for (i = [0 : screw_count - 1]) start_y + (i * _SCREW_VERTICAL_SPACING)];
 
 
 // ============================================================================
@@ -75,38 +68,65 @@ function get_bracket_screw_positions(unit_height) =
 
 /**
  * 2D hexagon for hex nut pocket
- *
- * @param size - Across-flats dimension
  */
-module hexagon_2d(size) {
-    circle(d = size / cos(30), $fn = 6);
+module hexagon_2d(af) {
+    // af = across flats dimension
+    circle(d = af / cos(30), $fn = 6);
 }
 
 
 /**
- * 2D bracket profile with rounded top corners
- * Creates the side profile of the bracket
- *
- * @param depth - How far the bracket extends
- * @param thickness - Thickness of the bracket
- * @param radius - Corner radius
+ * 2D rounded rectangle
  */
-module bracket_profile_2d(depth, thickness, radius) {
+module rounded_rect_2d(width, height, radius) {
+    offset(r = radius)
+        offset(delta = -radius)
+            square([width, height], center = true);
+}
+
+
+// ============================================================================
+// 3D Helper Shapes
+// ============================================================================
+
+/**
+ * Rounded box using hull of spheres at corners
+ */
+module rounded_box(size, radius, fn = 32) {
+    x = size[0];
+    y = size[1];
+    z = size[2];
+    r = min(radius, min(x, min(y, z)) / 2);
+
     hull() {
-        // Bottom left corner (sharp)
-        square([0.1, 0.1]);
+        for (xi = [-1, 1])
+            for (yi = [-1, 1])
+                for (zi = [-1, 1])
+                    translate([xi * (x/2 - r), yi * (y/2 - r), zi * (z/2 - r)])
+                        sphere(r = r, $fn = fn);
+    }
+}
 
-        // Bottom right corner (sharp)
-        translate([depth - 0.1, 0])
-            square([0.1, 0.1]);
 
-        // Top right corner (rounded)
-        translate([depth - radius, thickness - radius])
-            circle(r = radius, $fn = 32);
+/**
+ * Box with only top edges rounded
+ */
+module top_rounded_box(size, radius, fn = 32) {
+    x = size[0];
+    y = size[1];
+    z = size[2];
+    r = min(radius, min(x, y) / 2, z / 2);
 
-        // Top left corner (rounded)
-        translate([radius, thickness - radius])
-            circle(r = radius, $fn = 32);
+    hull() {
+        // Bottom corners (sharp)
+        translate([0, 0, -z/2 + 0.5])
+            cube([x, y, 1], center = true);
+
+        // Top corners (rounded)
+        for (xi = [-1, 1])
+            for (yi = [-1, 1])
+                translate([xi * (x/2 - r), yi * (y/2 - r), z/2 - r])
+                    sphere(r = r, $fn = fn);
     }
 }
 
@@ -116,99 +136,78 @@ module bracket_profile_2d(depth, thickness, radius) {
 // ============================================================================
 
 /**
- * Creates a single bracket block with rounded top
- * This is the raised portion that extends from the faceplate
- *
- * @param unit_height - Height in rack units
- * @param bracket_width - Width of bracket
- * @param bracket_depth - How far bracket extends inward
- * @param bracket_thickness - Wall thickness of bracket
- * @param corner_radius - Rounding on top corners
- * @param fn - Curve resolution
+ * Creates the joiner bracket block with rounded top edges
  */
 module joiner_bracket(
     unit_height = 1,
-    bracket_width = BRACKET_WIDTH,
-    bracket_depth = BRACKET_DEPTH,
-    bracket_thickness = BRACKET_THICKNESS,
-    corner_radius = BRACKET_CORNER_RADIUS,
+    bracket_width = _BRACKET_WIDTH,
+    bracket_depth = _BRACKET_DEPTH,
+    bracket_thickness = _BRACKET_THICKNESS,
+    faceplate_thickness = _FACEPLATE_THICKNESS,
+    rounding = _BRACKET_ROUNDING,
     fn = 32
 ) {
-    panel_height = unit_height * EIA_PANEL_HEIGHT;
+    panel_height = unit_height * _EIA_PANEL_HEIGHT;
+    total_height = faceplate_thickness + bracket_depth + bracket_thickness;
 
-    // Bracket body with rounded top edges
-    translate([0, -panel_height/2, 0])
-        rotate([90, 0, 90])
-            linear_extrude(height = bracket_width, center = false)
-                hull() {
-                    // Bottom corners (sharp at faceplate level)
-                    square([panel_height, 0.1]);
+    // Create L-shaped bracket with rounded top
+    difference() {
+        // Main bracket body with rounded top edges
+        translate([bracket_width/2, 0, total_height/2])
+            top_rounded_box(
+                [bracket_width, panel_height, total_height],
+                rounding,
+                fn
+            );
 
-                    // Top corners (rounded)
-                    translate([corner_radius, bracket_depth + bracket_thickness - corner_radius])
-                        circle(r = corner_radius, $fn = fn);
-                    translate([panel_height - corner_radius, bracket_depth + bracket_thickness - corner_radius])
-                        circle(r = corner_radius, $fn = fn);
-
-                    // Bottom of rounded section
-                    translate([0, bracket_depth])
-                        square([panel_height, 0.1]);
-                }
+        // Cut away the lower back to create L-shape
+        translate([bracket_width/2, 0, faceplate_thickness/2 - 0.05])
+            cube([bracket_width + 1, panel_height + 1, faceplate_thickness + 0.1], center = true);
+    }
 }
 
 
 /**
  * Creates the LEFT side joiner (with screw clearance holes)
- * Screws insert from this side into hex nuts on the right side
- *
- * @param unit_height - Height in rack units
- * @param faceplate_width - Width of the faceplate section
- * @param faceplate_thickness - Thickness of faceplate
- * @param bracket_width - Width of the bracket
- * @param bracket_depth - How far bracket extends inward
- * @param bracket_thickness - Thickness of bracket top
- * @param include_faceplate - Include a sample faceplate section
- * @param fn - Curve resolution
  */
 module faceplate_joiner_left(
     unit_height = 1,
     faceplate_width = 60,
-    faceplate_thickness = FACEPLATE_THICKNESS,
-    bracket_width = BRACKET_WIDTH,
-    bracket_depth = BRACKET_DEPTH,
-    bracket_thickness = BRACKET_THICKNESS,
+    faceplate_thickness = _FACEPLATE_THICKNESS,
+    bracket_width = _BRACKET_WIDTH,
+    bracket_depth = _BRACKET_DEPTH,
+    bracket_thickness = _BRACKET_THICKNESS,
+    rounding = _BRACKET_ROUNDING,
     include_faceplate = true,
     fn = 32
 ) {
-    panel_height = unit_height * EIA_PANEL_HEIGHT;
+    panel_height = unit_height * _EIA_PANEL_HEIGHT;
     screw_positions = get_bracket_screw_positions(unit_height);
-
-    // Screw hole X position (center of bracket wall)
-    screw_x = bracket_width / 2;
-    // Screw hole Z position (center of bracket top section)
     screw_z = faceplate_thickness + bracket_depth + bracket_thickness / 2;
 
     difference() {
         union() {
             // Faceplate section (optional)
             if (include_faceplate) {
-                translate([-faceplate_width + bracket_width, -panel_height/2, 0])
-                    cube([faceplate_width, panel_height, faceplate_thickness]);
+                translate([-faceplate_width/2 + bracket_width/2, 0, faceplate_thickness/2])
+                    cube([faceplate_width, panel_height, faceplate_thickness], center = true);
             }
 
-            // Bracket extending inward from faceplate
+            // Bracket
             joiner_bracket(
                 unit_height = unit_height,
                 bracket_width = bracket_width,
                 bracket_depth = bracket_depth,
                 bracket_thickness = bracket_thickness,
+                faceplate_thickness = faceplate_thickness,
+                rounding = rounding,
                 fn = fn
             );
         }
 
-        // Screw clearance holes (horizontal, going through bracket)
+        // Screw clearance holes
         for (y_pos = screw_positions) {
-            translate([screw_x, y_pos, screw_z])
+            translate([bracket_width/2, y_pos, screw_z])
                 rotate([0, 90, 0])
                     cylinder(h = bracket_width + 2, d = M5_CLEARANCE_HOLE, center = true, $fn = fn);
         }
@@ -218,78 +217,62 @@ module faceplate_joiner_left(
 
 /**
  * Creates the RIGHT side joiner (with hex nut pockets)
- * Hex nuts sit in pockets, screws come from the left side
- *
- * @param unit_height - Height in rack units
- * @param faceplate_width - Width of the faceplate section
- * @param faceplate_thickness - Thickness of faceplate
- * @param bracket_width - Width of the bracket
- * @param bracket_depth - How far bracket extends inward
- * @param bracket_thickness - Thickness of bracket top
- * @param include_faceplate - Include a sample faceplate section
- * @param fn - Curve resolution
  */
 module faceplate_joiner_right(
     unit_height = 1,
     faceplate_width = 60,
-    faceplate_thickness = FACEPLATE_THICKNESS,
-    bracket_width = BRACKET_WIDTH,
-    bracket_depth = BRACKET_DEPTH,
-    bracket_thickness = BRACKET_THICKNESS,
+    faceplate_thickness = _FACEPLATE_THICKNESS,
+    bracket_width = _BRACKET_WIDTH,
+    bracket_depth = _BRACKET_DEPTH,
+    bracket_thickness = _BRACKET_THICKNESS,
+    rounding = _BRACKET_ROUNDING,
     include_faceplate = true,
     fn = 32
 ) {
-    panel_height = unit_height * EIA_PANEL_HEIGHT;
+    panel_height = unit_height * _EIA_PANEL_HEIGHT;
     screw_positions = get_bracket_screw_positions(unit_height);
-
-    // Screw hole X position (center of bracket wall)
-    screw_x = bracket_width / 2;
-    // Screw hole Z position (center of bracket top section)
     screw_z = faceplate_thickness + bracket_depth + bracket_thickness / 2;
 
     difference() {
         union() {
             // Faceplate section (optional)
             if (include_faceplate) {
-                translate([0, -panel_height/2, 0])
-                    cube([faceplate_width, panel_height, faceplate_thickness]);
+                translate([faceplate_width/2 + bracket_width/2, 0, faceplate_thickness/2])
+                    cube([faceplate_width, panel_height, faceplate_thickness], center = true);
             }
 
-            // Bracket extending inward from faceplate
-            translate([0, 0, 0])
-                joiner_bracket(
-                    unit_height = unit_height,
-                    bracket_width = bracket_width,
-                    bracket_depth = bracket_depth,
-                    bracket_thickness = bracket_thickness,
-                    fn = fn
-                );
+            // Bracket
+            joiner_bracket(
+                unit_height = unit_height,
+                bracket_width = bracket_width,
+                bracket_depth = bracket_depth,
+                bracket_thickness = bracket_thickness,
+                faceplate_thickness = faceplate_thickness,
+                rounding = rounding,
+                fn = fn
+            );
         }
 
-        // Screw clearance holes (horizontal, going through bracket)
+        // Screw holes and hex nut pockets
         for (y_pos = screw_positions) {
             // Through hole
-            translate([screw_x, y_pos, screw_z])
+            translate([bracket_width/2, y_pos, screw_z])
                 rotate([0, 90, 0])
                     cylinder(h = bracket_width + 2, d = M5_CLEARANCE_HOLE, center = true, $fn = fn);
 
-            // Hex nut pocket (on the outer face of bracket)
+            // Hex nut pocket
             translate([bracket_width - M5_HEX_NUT_POCKET_DEPTH + 0.1, y_pos, screw_z])
                 rotate([0, 90, 0])
-                    linear_extrude(height = M5_HEX_NUT_POCKET_DEPTH + 0.1)
-                        hexagon_2d(M5_HEX_NUT_POCKET_AF);
+                    rotate([0, 0, 30])  // Flat side for printing
+                        linear_extrude(height = M5_HEX_NUT_POCKET_DEPTH + 1)
+                            hexagon_2d(M5_HEX_NUT_POCKET_AF);
         }
     }
 }
 
 
 /**
- * Creates both left and right joiners side by side for printing
- *
- * @param unit_height - Height in rack units
- * @param faceplate_width - Width of each faceplate section
- * @param spacing - Gap between parts
- * @param fn - Curve resolution
+ * Creates both joiners side by side for printing
  */
 module faceplate_joiner_pair(
     unit_height = 1,
@@ -297,9 +280,9 @@ module faceplate_joiner_pair(
     spacing = 10,
     fn = 32
 ) {
-    // Left side (blue)
+    // Left side
     color("SteelBlue")
-        translate([-faceplate_width - spacing/2, 0, 0])
+        translate([-faceplate_width/2 - spacing/2, 0, 0])
             faceplate_joiner_left(
                 unit_height = unit_height,
                 faceplate_width = faceplate_width,
@@ -307,9 +290,9 @@ module faceplate_joiner_pair(
                 fn = fn
             );
 
-    // Right side (coral)
+    // Right side
     color("Coral")
-        translate([spacing/2, 0, 0])
+        translate([faceplate_width/2 + spacing/2, 0, 0])
             faceplate_joiner_right(
                 unit_height = unit_height,
                 faceplate_width = faceplate_width,
@@ -320,12 +303,7 @@ module faceplate_joiner_pair(
 
 
 /**
- * Creates an assembled view showing how the parts mate
- *
- * @param unit_height - Height in rack units
- * @param faceplate_width - Width of each faceplate section
- * @param explode - Separation distance for exploded view
- * @param fn - Curve resolution
+ * Creates an assembled view showing how parts mate
  */
 module faceplate_joiner_assembled(
     unit_height = 1,
@@ -333,11 +311,11 @@ module faceplate_joiner_assembled(
     explode = 0,
     fn = 32
 ) {
-    bracket_width = BRACKET_WIDTH;
+    bracket_width = _BRACKET_WIDTH;
 
     // Left side
     color("SteelBlue", 0.8)
-        translate([-faceplate_width - explode/2, 0, 0])
+        translate([-faceplate_width + bracket_width - explode/2, 0, 0])
             faceplate_joiner_left(
                 unit_height = unit_height,
                 faceplate_width = faceplate_width,
@@ -345,26 +323,20 @@ module faceplate_joiner_assembled(
                 fn = fn
             );
 
-    // Right side (flipped to mate)
+    // Right side
     color("Coral", 0.8)
         translate([explode/2, 0, 0])
-            mirror([1, 0, 0])
-                faceplate_joiner_right(
-                    unit_height = unit_height,
-                    faceplate_width = faceplate_width,
-                    include_faceplate = true,
-                    fn = fn
-                );
+            faceplate_joiner_right(
+                unit_height = unit_height,
+                faceplate_width = faceplate_width,
+                include_faceplate = true,
+                fn = fn
+            );
 }
 
 
 /**
- * Creates just the bracket portion for adding to existing faceplates
- * Use this with union() to add a joiner bracket to your faceplate
- *
- * @param unit_height - Height in rack units
- * @param side - "left" for screw holes, "right" for hex nut pockets
- * @param fn - Curve resolution
+ * Creates just the bracket for adding to existing faceplates
  */
 module joiner_bracket_addon(
     unit_height = 1,
@@ -372,41 +344,17 @@ module joiner_bracket_addon(
     fn = 32
 ) {
     if (side == "left") {
-        faceplate_joiner_left(
-            unit_height = unit_height,
-            include_faceplate = false,
-            fn = fn
-        );
+        faceplate_joiner_left(unit_height = unit_height, include_faceplate = false, fn = fn);
     } else {
-        faceplate_joiner_right(
-            unit_height = unit_height,
-            include_faceplate = false,
-            fn = fn
-        );
+        faceplate_joiner_right(unit_height = unit_height, include_faceplate = false, fn = fn);
     }
 }
 
 
 // ============================================================================
-// Preview / Testing
+// Preview
 // ============================================================================
 
-// Uncomment one of these to preview:
-
-// Single left joiner (1U, 3 screws)
-// faceplate_joiner_left(unit_height=1);
-
-// Single right joiner (1U, 3 screws)
-// faceplate_joiner_right(unit_height=1);
-
-// Pair side by side (1U)
+// Uncomment to preview:
 // faceplate_joiner_pair(unit_height=1);
-
-// Assembled view (1U)
-// faceplate_joiner_assembled(unit_height=1, explode=0);
-
-// Exploded view (1U)
 // faceplate_joiner_assembled(unit_height=1, explode=20);
-
-// 2U version with 6 screws
-// faceplate_joiner_pair(unit_height=2);
