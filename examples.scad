@@ -574,14 +574,15 @@ module example_cage_with_fusion_ears()
                 hex_wall = 2
             );
 
-            // Fusion-style rack ears
+            // Fusion-style rack ears (toolless for Ubiquiti-style racks)
             rack_ears_for_rack(
                 rack_width = rack_width,
                 unit_height = unit_height,
                 ear_depth = 22,
                 ear_thickness = 2.9,
                 hole_radius = 2.25,
-                countersink = true
+                countersink = true,
+                toolless = true
             );
         }
 

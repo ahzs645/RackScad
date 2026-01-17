@@ -107,6 +107,9 @@ rack_ear_hole_diameter = 5; // [3:0.5:8]
 // Use countersink holes (Fusion style only)
 rack_ear_countersink = true;
 
+// Toolless mounting (no screw holes, for Ubiquiti-style racks)
+rack_ear_toolless = true;
+
 
 /* [Faceplate Modifications] */
 
@@ -301,6 +304,7 @@ module generate_rack_cage()
                         ear_thickness = rack_ear_thickness,
                         hole_radius = rack_ear_hole_diameter / 2,
                         countersink = rack_ear_countersink,
+                        toolless = rack_ear_toolless,
                         fn = this_fn
                     );
                 }

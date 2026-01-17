@@ -94,6 +94,21 @@ module backplate_profile(scale_factor=1.0)
 }
 
 /*
+ * Create a toolless rack hook (just the hook profile, no screws)
+ * For use with toolless racks like Ubiquiti
+ *
+ * Parameters:
+ *   thickness - material thickness
+ *   fn - detail level
+ */
+module rack_hook(thickness = 2.9, fn = 32)
+{
+    rotate([90, 0, 90])
+        linear_extrude(thickness)
+            backplate_profile();
+}
+
+/*
  * Create a single rack ear (left side)
  *
  * Parameters:
@@ -103,6 +118,7 @@ module backplate_profile(scale_factor=1.0)
  *   bottom_depth - depth of the bottom panel
  *   hole_radius - mounting hole radius
  *   countersink - use countersink holes
+ *   toolless - if true, omit screw holes for toolless rack mounting
  *   rounding - edge rounding radius
  *   fn - detail level
  */
@@ -113,6 +129,7 @@ module rack_ear_left(
     bottom_depth = 22,
     hole_radius = 2.25,
     countersink = true,
+    toolless = false,
     rounding = 0.3,
     fn = 32
 )
@@ -129,29 +146,30 @@ module rack_ear_left(
             translate([side_width/2, bottom_depth/2 + thickness/2, thickness/2])
                 cube([side_width, bottom_depth, thickness], center=true);
 
-            // Backplate (EIA mounting bracket)
+            // Backplate (EIA mounting bracket / hooks)
             translate([0, 0, 0])
-                rotate([90, 0, 90])
-                    linear_extrude(thickness)
-                        backplate_profile();
+                rack_hook(thickness, fn);
 
             // Support block
             translate([side_width - 5, bottom_depth/2 + thickness, 0])
                 cube([5, 5, 1.5]);
         }
 
-        // Mounting hole with optional countersink
-        if (countersink)
+        // Mounting hole with optional countersink (skip if toolless)
+        if (!toolless)
         {
-            translate([side_width/2 - 3.8, -1, side_height/2])
-                rotate([-90, 0, 0])
-                    countersink_hole(hole_radius, 4, thickness + 2, 1.75, fn);
-        }
-        else
-        {
-            translate([side_width/2 - 3.8, -1, side_height/2])
-                rotate([-90, 0, 0])
-                    cylinder(h=thickness + 2, r=hole_radius, $fn=fn);
+            if (countersink)
+            {
+                translate([side_width/2 - 3.8, -1, side_height/2])
+                    rotate([-90, 0, 0])
+                        countersink_hole(hole_radius, 4, thickness + 2, 1.75, fn);
+            }
+            else
+            {
+                translate([side_width/2 - 3.8, -1, side_height/2])
+                    rotate([-90, 0, 0])
+                        cylinder(h=thickness + 2, r=hole_radius, $fn=fn);
+            }
         }
     }
 }
@@ -169,13 +187,14 @@ module rack_ear_right(
     bottom_depth = 22,
     hole_radius = 2.25,
     countersink = true,
+    toolless = false,
     rounding = 0.3,
     fn = 32
 )
 {
     mirror([1, 0, 0])
         rack_ear_left(thickness, side_width, side_height, bottom_depth,
-                      hole_radius, countersink, rounding, fn);
+                      hole_radius, countersink, toolless, rounding, fn);
 }
 
 /*
@@ -188,6 +207,7 @@ module rack_ear_right(
  *   ear_depth - how far the ears extend back
  *   hole_radius - mounting hole radius
  *   countersink - use countersink holes
+ *   toolless - if true, omit screw holes for toolless rack mounting
  *   fn - detail level
  */
 module rack_ears_pair(
@@ -197,6 +217,7 @@ module rack_ears_pair(
     ear_depth = 22,
     hole_radius = 2.25,
     countersink = true,
+    toolless = false,
     fn = 32
 )
 {
@@ -214,6 +235,7 @@ module rack_ears_pair(
                         bottom_depth = ear_depth,
                         hole_radius = hole_radius,
                         countersink = countersink,
+                        toolless = toolless,
                         fn = fn
                     );
 
@@ -228,6 +250,7 @@ module rack_ears_pair(
                     bottom_depth = ear_depth,
                     hole_radius = hole_radius,
                     countersink = countersink,
+                    toolless = toolless,
                     fn = fn
                 );
 }
@@ -242,6 +265,7 @@ module rack_ears_pair(
  *   ear_thickness - material thickness
  *   hole_radius - mounting hole radius
  *   countersink - use countersink holes
+ *   toolless - if true, omit screw holes for toolless rack mounting (e.g., Ubiquiti)
  *   fn - detail level
  */
 module rack_ears_for_rack(
@@ -251,6 +275,7 @@ module rack_ears_for_rack(
     ear_thickness = 2.9,
     hole_radius = 2.25,
     countersink = true,
+    toolless = false,
     fn = 32
 )
 {
@@ -267,6 +292,7 @@ module rack_ears_for_rack(
         ear_depth = ear_depth,
         hole_radius = hole_radius,
         countersink = countersink,
+        toolless = toolless,
         fn = fn
     );
 }
