@@ -371,3 +371,38 @@ module simple_rack_ears_pair(
     translate([faceplate_width/2, -height/2, 0])
         simple_rack_ear(ear_width, height, ear_depth, thickness, hole_diameter, 0, fn);
 }
+
+/*
+ * Create rack hooks at the bottom of a faceplate (hooks only, no L-bracket)
+ * For toolless mounting to Ubiquiti-style racks
+ *
+ * Parameters:
+ *   rack_width - rack width in inches (10, 19, etc.)
+ *   unit_height - height in U (1, 2, 3, etc.)
+ *   thickness - material thickness of hooks
+ *   fn - detail level
+ */
+module bottom_rack_hooks(
+    rack_width = 10,
+    unit_height = 1,
+    thickness = 2.9,
+    fn = 32
+)
+{
+    _INCH_MM = 25.4;
+    _EIA_UNIT = 44.45;
+
+    faceplate_width = rack_width * _INCH_MM;
+    faceplate_height = unit_height * _EIA_UNIT;
+
+    // Left hook - mirrored version of right hook
+    mirror([1, 0, 0])
+        translate([faceplate_width/2 - thickness, -faceplate_height/2, 0])
+            rotate([0, 90, 90])
+                rack_hook(thickness, fn);
+
+    // Right hook - pointing outward, laying toward +Y
+    translate([faceplate_width/2 - thickness, -faceplate_height/2, 0])
+        rotate([0, 90, 90])
+            rack_hook(thickness, fn);
+}

@@ -20,7 +20,7 @@ use <components/rack_ears.scad>
 /* [Example Selection] */
 
 // Select which example to display
-example = 17; // [1:Basic Shapes, 2:Standalone Faceplate, 3:Faceplate with Ears, 4:Keystone Jacks, 5:Fan Grills, 6:Fan Cutout with Holes, 7:Cage Structure, 8:Cage with Honeycomb, 9:Preview Guides, 10:Two Stacked Cages, 11:Side-by-Side Cages, 12:Dual Fan Faceplate, 13:Keystone Patch Panel, 14:Simple Rack Ears, 15:Fusion Rack Ears, 16:Faceplate with Rack Ears, 17:Full Cage with Fusion Ears]
+example = 18; // [1:Basic Shapes, 2:Standalone Faceplate, 3:Faceplate with Ears, 4:Keystone Jacks, 5:Fan Grills, 6:Fan Cutout with Holes, 7:Cage Structure, 8:Cage with Honeycomb, 9:Preview Guides, 10:Two Stacked Cages, 11:Side-by-Side Cages, 12:Dual Fan Faceplate, 13:Keystone Patch Panel, 14:Simple Rack Ears, 15:Fusion Rack Ears, 16:Faceplate with Rack Ears, 17:Full Cage with Fusion Ears, 18:Faceplate with Bottom Hooks]
 
 
 /* [Hide] */
@@ -594,6 +594,36 @@ module example_cage_with_fusion_ears()
 
 
 // ============================================================
+// EXAMPLE 18: Faceplate with Bottom Hooks Only
+// Toolless hooks attached directly to bottom of faceplate
+// ============================================================
+module example_faceplate_with_bottom_hooks()
+{
+    rack_width = 10;    // 10" rack
+    unit_height = 2;    // 2U
+
+    // Faceplate
+    create_blank_faceplate(
+        desired_width = rack_width,
+        unit_height = unit_height,
+        ear_type = "None",
+        heavy_device = 0,
+        faceplate_radius = 5,
+        tap_hole_diameter = 0,
+        add_alignment_pins = false,
+        reinforce_faceplate = false
+    );
+
+    // Bottom hooks only (no L-bracket ears)
+    bottom_rack_hooks(
+        rack_width = rack_width,
+        unit_height = unit_height,
+        thickness = 2.9
+    );
+}
+
+
+// ============================================================
 // Render selected example
 // ============================================================
 if (example == 1) example_basic_shapes();
@@ -613,3 +643,4 @@ else if (example == 14) example_simple_rack_ears();
 else if (example == 15) example_fusion_rack_ears();
 else if (example == 16) example_faceplate_with_rack_ears();
 else if (example == 17) example_cage_with_fusion_ears();
+else if (example == 18) example_faceplate_with_bottom_hooks();
