@@ -1,43 +1,44 @@
 /*
  * Rack Scad - Enclosed Box Rack Mount Type
- * Mounting system for boxes/devices without existing mounting holes
+ * Based on rackstack-main enclosed-box implementation
  *
- * This system uses side rails and a front plate to hold a box.
- * The device simply slides in and is held by the rails and front.
+ * This system uses side rails and a front plate to hold a box
+ * that doesn't have its own mounting holes.
  */
 
 include <common.scad>
+use <../components/screws.scad>
 
 // ============================================================================
-// ENCLOSED BOX CONFIGURATION
+// CONFIGURATION
 // ============================================================================
 
 DEFAULT_BOX_WIDTH = 160;
-DEFAULT_BOX_HEIGHT = 30;
+DEFAULT_BOX_HEIGHT = 27;
 DEFAULT_BOX_DEPTH = 120;
 
-DEFAULT_RAIL_THICKNESS = 2;
+DEFAULT_RAIL_THICKNESS = 1.5;
 DEFAULT_RAIL_SIDE_THICKNESS = 3;
 DEFAULT_FRONT_PLATE_THICKNESS = 3;
 
 // ============================================================================
-// MAIN ENCLOSED BOX SYSTEM
+// ENCLOSED BOX SYSTEM
 // ============================================================================
 
 /*
  * Create a complete enclosed box mounting system
- * Generates side rails and front plate
  *
  * Parameters:
  *   boxWidth - Width of the box to mount
  *   boxHeight - Height of the box
  *   boxDepth - Depth of the box
- *   railThickness - Thickness of rail bottom/top
- *   railSideThickness - Thickness of rail sides
- *   frontPlateThickness - Thickness of front plate
- *   frontCutoutXSpace - X margin for front cutout
- *   frontCutoutYSpace - Y margin for front cutout
- *   zOrientation - "middle" or "bottom" placement
+ *   railDefaultThickness - Default thickness for rail top/bottom
+ *   railSideThickness - Side wall thickness
+ *   frontPlateThickness - Front plate thickness
+ *   frontPlateCutoutXSpace - X margin for front cutout
+ *   frontPlateCutoutYSpace - Y margin for front cutout
+ *   zOrientation - "middle" or "bottom"
+ *   recessSideRail - Recess the side rail for wider boxes
  *   visualize - Show box preview
  *   splitForPrint - Separate parts for printing
  */
@@ -45,299 +46,362 @@ module enclosed_box_system(
     boxWidth = DEFAULT_BOX_WIDTH,
     boxHeight = DEFAULT_BOX_HEIGHT,
     boxDepth = DEFAULT_BOX_DEPTH,
-    railThickness = DEFAULT_RAIL_THICKNESS,
+    railDefaultThickness = DEFAULT_RAIL_THICKNESS,
     railSideThickness = DEFAULT_RAIL_SIDE_THICKNESS,
     frontPlateThickness = DEFAULT_FRONT_PLATE_THICKNESS,
-    frontCutoutXSpace = 5,
-    frontCutoutYSpace = 3,
+    frontPlateCutoutXSpace = 5,
+    frontPlateCutoutYSpace = 3,
     zOrientation = "middle",
+    recessSideRail = false,
     visualize = false,
     splitForPrint = false
 ) {
-    // Calculate required rack units
-    u = _find_u(boxHeight, railThickness, zOrientation);
-    totalRackHeight = u * EIA_UNIT_HEIGHT;
-
-    // Rail bottom thickness based on orientation
-    railBottomThickness = _rail_bottom_thickness(u, boxHeight, railThickness, zOrientation);
-
-    // Positions
-    sideRailBaseWidth = 15;  // Width of each side rail
+    u = findU(boxHeight, railDefaultThickness);
+    railBottomThick = railBottomThickness(u, boxHeight, railDefaultThickness, zOrientation);
 
     if (visualize) {
-        // Show the box being mounted
-        %translate([railSideThickness, 0, railBottomThickness])
-        cube([boxWidth, boxDepth, boxHeight]);
+        // Show the box being mounted (transparent)
+        %cube([boxWidth, boxDepth, boxHeight]);
     }
 
     if (splitForPrint) {
-        // Spread parts out for printing
         // Left rail
         color("SteelBlue")
-        side_support_rail(
-            boxHeight = boxHeight,
-            boxDepth = boxDepth,
-            boxWidth = boxWidth,
-            railThickness = railThickness,
-            railSideThickness = railSideThickness,
-            hasTop = true,
-            zOrientation = zOrientation
+        side_support_rail_base(
+            top = true,
+            recess = recessSideRail,
+            defaultThickness = railDefaultThickness,
+            supportedZ = boxHeight,
+            supportedY = boxDepth,
+            supportedX = boxWidth,
+            zOrientation = zOrientation,
+            railSideThickness = railSideThickness
         );
 
-        // Right rail
+        // Right rail (mirrored)
         color("SteelBlue")
         translate([sideRailBaseWidth * 2 + 10, 0, 0])
         mirror([1, 0, 0])
         translate([-sideRailBaseWidth, 0, 0])
-        side_support_rail(
-            boxHeight = boxHeight,
-            boxDepth = boxDepth,
-            boxWidth = boxWidth,
-            railThickness = railThickness,
-            railSideThickness = railSideThickness,
-            hasTop = true,
-            zOrientation = zOrientation
+        side_support_rail_base(
+            top = true,
+            recess = recessSideRail,
+            defaultThickness = railDefaultThickness,
+            supportedZ = boxHeight,
+            supportedY = boxDepth,
+            supportedX = boxWidth,
+            zOrientation = zOrientation,
+            railSideThickness = railSideThickness
         );
 
         // Front plate
         color("Coral")
-        translate([0, -50, 0])
+        mirror([0, 1, 0])
+        translate([0, uDiff, frontPlateThickness - railBottomThick])
         front_box_holder(
-            boxWidth = boxWidth,
-            boxHeight = boxHeight,
             plateThickness = frontPlateThickness,
-            cutoutXSpace = frontCutoutXSpace,
-            cutoutYSpace = frontCutoutYSpace,
-            u = u,
-            railBottomThickness = railBottomThickness,
-            zOrientation = zOrientation
+            cutoutOffsetX = (rackMountScrewWidth - (boxWidth - 2 * frontPlateCutoutXSpace)) / 2,
+            cutoutOffsetY = railBottomThick + frontPlateCutoutYSpace,
+            cutoutX = boxWidth - 2 * frontPlateCutoutXSpace,
+            cutoutY = boxHeight - 2 * frontPlateCutoutYSpace,
+            zOrientation = zOrientation,
+            supportedZ = boxHeight,
+            supportWidth = max(10, boxWidth - (sideRailBaseWidth + 10)),
+            supportRailDefaultThickness = railDefaultThickness
         );
     } else {
         // Assembled view
+
         // Left rail
         color("SteelBlue")
-        side_support_rail(
-            boxHeight = boxHeight,
-            boxDepth = boxDepth,
-            boxWidth = boxWidth,
-            railThickness = railThickness,
-            railSideThickness = railSideThickness,
-            hasTop = true,
-            zOrientation = zOrientation
+        side_support_rail_base(
+            top = true,
+            recess = recessSideRail,
+            defaultThickness = railDefaultThickness,
+            supportedZ = boxHeight,
+            supportedY = boxDepth,
+            supportedX = boxWidth,
+            zOrientation = zOrientation,
+            railSideThickness = railSideThickness
         );
 
         // Right rail
         color("SteelBlue")
-        translate([boxWidth + 2 * railSideThickness, 0, 0])
+        translate([boxWidth, 0, 0])
         mirror([1, 0, 0])
-        side_support_rail(
-            boxHeight = boxHeight,
-            boxDepth = boxDepth,
-            boxWidth = boxWidth,
-            railThickness = railThickness,
-            railSideThickness = railSideThickness,
-            hasTop = true,
-            zOrientation = zOrientation
+        side_support_rail_base(
+            top = true,
+            recess = recessSideRail,
+            defaultThickness = railDefaultThickness,
+            supportedZ = boxHeight,
+            supportedY = boxDepth,
+            supportedX = boxWidth,
+            zOrientation = zOrientation,
+            railSideThickness = railSideThickness
         );
 
-        // Front plate
+        // Front plate (positioned at front)
         color("Coral")
-        translate([railSideThickness - (rackMountScrewWidth - boxWidth) / 2, 0, railBottomThickness])
+        translate([railSideThickness - (railSupportsDx - boxWidth) / 2, 0, sideRailLowerMountPointToBottom - railBottomThick])
         mirror([0, 1, 0])
         rotate([90, 0, 0])
         front_box_holder(
-            boxWidth = boxWidth,
-            boxHeight = boxHeight,
             plateThickness = frontPlateThickness,
-            cutoutXSpace = frontCutoutXSpace,
-            cutoutYSpace = frontCutoutYSpace,
-            u = u,
-            railBottomThickness = railBottomThickness,
-            zOrientation = zOrientation
+            cutoutOffsetX = (rackMountScrewWidth - (boxWidth - 2 * frontPlateCutoutXSpace)) / 2,
+            cutoutOffsetY = railBottomThick + frontPlateCutoutYSpace,
+            cutoutX = boxWidth - 2 * frontPlateCutoutXSpace,
+            cutoutY = boxHeight - 2 * frontPlateCutoutYSpace,
+            zOrientation = zOrientation,
+            supportedZ = boxHeight,
+            supportWidth = max(10, boxWidth - (sideRailBaseWidth + 10)),
+            supportRailDefaultThickness = railDefaultThickness
         );
     }
 }
 
 // ============================================================================
-// SIDE SUPPORT RAIL MODULE
+// SIDE SUPPORT RAIL
+// Based on rackstack-main sideRail.scad
 // ============================================================================
 
-/*
- * Create a side support rail
- *
- * Parameters:
- *   boxHeight - Height of box to support
- *   boxDepth - Depth of box
- *   boxWidth - Width of box (for ear calculation)
- *   railThickness - Bottom/top thickness
- *   railSideThickness - Side wall thickness
- *   hasTop - Include top rail
- *   zOrientation - "middle" or "bottom"
- *   ventilation - Add vent holes to side
- */
-module side_support_rail(
-    boxHeight = DEFAULT_BOX_HEIGHT,
-    boxDepth = DEFAULT_BOX_DEPTH,
-    boxWidth = DEFAULT_BOX_WIDTH,
-    railThickness = DEFAULT_RAIL_THICKNESS,
-    railSideThickness = DEFAULT_RAIL_SIDE_THICKNESS,
-    hasTop = true,
+module side_support_rail_base(
+    top = true,
+    recess = false,
+    supportedZ,
+    supportedY,
+    supportedX,
     zOrientation = "middle",
-    ventilation = false
+    defaultThickness = 2,
+    railSideThickness = 4,
+    sideVent = true
 ) {
-    u = _find_u(boxHeight, railThickness, zOrientation);
-    bottomThickness = _rail_bottom_thickness(u, boxHeight, railThickness, zOrientation);
-    topThickness = hasTop ? railThickness : 0;
+    mountBlockDepth = 10;
+    screwMountGlobalDz = screwDiff / 2.0;
+    sideRailScrewToMainRailFrontDx = frontScrewSpacing + railFrontThickness;
 
-    totalHeight = bottomThickness + boxHeight + topThickness;
-    sideRailWidth = 15;
+    railLength = max(sideRailScrewMountDist + sideRailScrewToMainRailFrontDx + mountBlockDepth / 2, supportedY + defaultThickness);
+    railBaseThickness = defaultThickness;
+    railBackThickness = 3;
 
+    u = findU(supportedZ, railBaseThickness);
+    railBottomThick = railBottomThickness(u, supportedZ, railBaseThickness, zOrientation);
+
+    railSideHeight = supportedZ + railBaseThickness + railBottomThick + overhangSlack;
+    frontMountPad = sideRailScrewToMainRailFrontDx - mountBlockDepth / 2;
+
+    translate([-railSideThickness, 0, -railBottomThick])
+    _apply_main_rail_mounts(u, railSideHeight, supportedX, railSideThickness, frontMountPad, mountBlockDepth)
+    _side_rail_body(
+        railLength, railBottomThick, railSideThickness, railSideHeight,
+        railBaseThickness, railBackThickness, supportedY, top, sideVent,
+        frontMountPad, mountBlockDepth
+    );
+}
+
+// Apply mount blocks with hex nut pockets - TWO mount blocks (front and back)
+module _apply_main_rail_mounts(u, railSideHeight, supportedX, railSideThickness, frontMountPad, mountBlockDepth) {
+    mountBlockExtension = (railSupportsDx - supportedX) / 2 - railSideThickness;
+    minHexNutPocketToXYDist = sideRailLowerMountPointToBottom;
+    minHexNutPocketToXZDist = mountBlockDepth / 2;
+    minHexNutPocketToYZDist = 4;
+    screwU = floor(railSideHeight / uDiff) - 1;
+
+    apply_pn() {
+        // Positive: Two mount blocks
+        _mount_blocks_positive(mountBlockExtension, frontMountPad, mountBlockDepth, railSideHeight);
+        // Negative: Hex nut pockets
+        _mount_blocks_negative(mountBlockExtension, frontMountPad, mountBlockDepth, minHexNutPocketToXYDist, minHexNutPocketToXZDist, minHexNutPocketToYZDist, railSideThickness, screwU);
+        // Base: children
+        children(0);
+    }
+}
+
+// Two mount blocks - front and back
+module _mount_blocks_positive(mountBlockExtension, frontMountPad, mountBlockDepth, railSideHeight) {
+    // Front mount block
+    translate([-mountBlockExtension, frontMountPad, 0])
+    cube([mountBlockExtension, mountBlockDepth, railSideHeight]);
+
+    // Back mount block
+    translate([-mountBlockExtension, frontMountPad + sideRailScrewMountDist, 0])
+    cube([mountBlockExtension, mountBlockDepth, railSideHeight]);
+}
+
+// Hex nut pockets for both mount blocks
+module _mount_blocks_negative(mountBlockExtension, frontMountPad, mountBlockDepth, minHexNutPocketToXYDist, minHexNutPocketToXZDist, minHexNutPocketToYZDist, railSideThickness, screwU) {
+    // Front mount block nut pockets
+    translate([0, frontMountPad, 0])
+    _single_mount_block_negative(mountBlockExtension, mountBlockDepth, minHexNutPocketToXYDist, minHexNutPocketToXZDist, minHexNutPocketToYZDist, railSideThickness, screwU);
+
+    // Back mount block nut pockets
+    translate([0, frontMountPad + sideRailScrewMountDist, 0])
+    _single_mount_block_negative(mountBlockExtension, mountBlockDepth, minHexNutPocketToXYDist, minHexNutPocketToXZDist, minHexNutPocketToYZDist, railSideThickness, screwU);
+}
+
+module _single_mount_block_negative(mountBlockExtension, mountBlockDepth, minHexNutPocketToXYDist, minHexNutPocketToXZDist, minHexNutPocketToYZDist, railSideThickness, screwU) {
+    backSpace = min((railSideThickness - 1) + mountBlockExtension - minHexNutPocketToYZDist, 15);
+
+    // Lower nut pocket
+    translate([-mountBlockExtension + minHexNutPocketToYZDist, minHexNutPocketToXZDist, minHexNutPocketToXYDist])
+    rotate([0, -90, 0])
+    hex_nut_pocket(screwType = rackFrameScrewType, openSide = false, backSpace = backSpace);
+
+    // Upper nut pocket
+    if (screwU > 0) {
+        translate([-mountBlockExtension + minHexNutPocketToYZDist, minHexNutPocketToXZDist, minHexNutPocketToXYDist + uDiff * screwU])
+        rotate([0, -90, 0])
+        hex_nut_pocket(screwType = rackFrameScrewType, openSide = false, backSpace = backSpace);
+    }
+}
+
+// Side rail body
+module _side_rail_body(
+    railLength, railBottomThick, railSideThickness, railSideHeight,
+    railBaseThickness, railBackThickness, supportedY, top, sideVent,
+    frontMountPad, mountBlockDepth
+) {
     difference() {
         union() {
             // Bottom plate
-            cube([sideRailWidth, boxDepth, bottomThickness]);
+            cube([sideRailBaseWidth, railLength, railBottomThick]);
 
             // Side wall
-            cube([railSideThickness, boxDepth, totalHeight]);
+            cube([railSideThickness, railLength, railSideHeight]);
 
-            // Top plate (optional)
-            if (hasTop) {
-                translate([0, 0, bottomThickness + boxHeight])
-                cube([sideRailWidth, boxDepth, topThickness]);
+            // Back support
+            translate([0, max(railLength - railBackThickness, supportedY), 0])
+            cube([sideRailBaseWidth, railBackThickness, railSideHeight]);
+
+            // Box back support
+            translate([0, supportedY, 0])
+            cube([sideRailBaseWidth, railBackThickness, railSideHeight]);
+
+            // Top plate
+            if (top) {
+                translate([0, 0, railSideHeight - railBaseThickness])
+                cube([sideRailBaseWidth, railLength, railBaseThickness]);
             }
+        }
 
-            // Front ear attachment
-            translate([0, 0, rackMountScrewZDist])
-            rack_ear(
-                u = u,
-                frontThickness = railSideThickness,
-                sideThickness = railSideThickness,
-                frontWidth = sideRailWidth + rackMountScrewXDist,
-                sideDepth = boxDepth,
-                backPlaneHeight = totalHeight - rackMountScrewZDist,
-                support = true
+        // Ventilation
+        if (sideVent) {
+            _side_rail_ventilation(
+                railSideThickness, railSideHeight, railBottomThick, railBaseThickness,
+                frontMountPad, mountBlockDepth, supportedY, railLength
             );
         }
+    }
+}
 
-        // Ventilation (optional)
-        if (ventilation) {
-            _side_rail_vents(sideRailWidth, boxDepth, totalHeight, railSideThickness);
+// Ventilation cutouts with rounded corners - TWO vent areas
+module _side_rail_ventilation(
+    sideThickness, totalHeight, bottomThick, topThick,
+    frontPad, mountDepth, supportedY, railLength
+) {
+    distFromEdge = 3;
+    r = 4;
+
+    // First vent area (between front mount and box back)
+    ventDy1 = frontPad + mountDepth + distFromEdge;
+    ventY1 = min(supportedY - (ventDy1 + distFromEdge), sideRailScrewMountDist - (2 * distFromEdge + mountDepth));
+
+    // Second vent area (behind box back support)
+    ventDy2 = max(ventDy1, supportedY + 3 + distFromEdge);  // 3 = railBackThickness
+    ventY2 = max(0, railLength - (ventDy2 + distFromEdge + mountDepth));
+
+    ventDz = bottomThick + distFromEdge + r;
+    ventZ = totalHeight - (ventDz + distFromEdge + r + topThick);
+
+    // First vent
+    if (ventY1 > 2 * r && ventZ > 2 * r) {
+        translate([-eps, ventDy1 + r, ventDz])
+        minkowski() {
+            cube([sideThickness + 2 * eps, ventY1 - 2 * r, ventZ]);
+            sphere(r = r, $fn = 16);
+        }
+    }
+
+    // Second vent
+    if (ventY2 > 2 * r && ventZ > 2 * r) {
+        translate([-eps, ventDy2 + r, ventDz])
+        minkowski() {
+            cube([sideThickness + 2 * eps, ventY2 - 2 * r, ventZ]);
+            sphere(r = r, $fn = 16);
         }
     }
 }
 
-/*
- * Internal: Add ventilation slots to side rail
- */
-module _side_rail_vents(width, depth, height, sideThick) {
-    slotWidth = 3;
-    slotSpacing = 8;
-    margin = 10;
-
-    for (y = [margin:slotSpacing:depth - margin]) {
-        translate([-eps, y, height * 0.2])
-        cube([sideThick + 2 * eps, slotWidth, height * 0.6]);
-    }
-}
-
 // ============================================================================
-// FRONT BOX HOLDER (FACEPLATE WITH CUTOUT)
+// FRONT BOX HOLDER
 // ============================================================================
 
-/*
- * Create front plate with cutout for box face
- *
- * Parameters:
- *   boxWidth - Width of box
- *   boxHeight - Height of box
- *   plateThickness - Plate thickness
- *   cutoutXSpace - X margin around cutout
- *   cutoutYSpace - Y margin around cutout
- *   u - Rack units
- *   railBottomThickness - Height of bottom rail
- *   zOrientation - Vertical position
- */
 module front_box_holder(
-    boxWidth = DEFAULT_BOX_WIDTH,
-    boxHeight = DEFAULT_BOX_HEIGHT,
-    plateThickness = DEFAULT_FRONT_PLATE_THICKNESS,
-    cutoutXSpace = 5,
-    cutoutYSpace = 3,
-    u = 1,
-    railBottomThickness = 5,
+    plateThickness = 3,
+    cutoutOffsetX,
+    cutoutOffsetY,
+    cutoutX,
+    cutoutY,
+    supportedZ,
+    supportWidth,
+    supportDepth = 5,
+    supportRailDefaultThickness,
     zOrientation = "middle"
 ) {
-    plateLength = rackMountScrewWidth + 2 * rackMountScrewXDist;
-    plateHeight = u * screwDiff + 2 * rackMountScrewZDist;
-
-    cutoutWidth = boxWidth - 2 * cutoutXSpace;
-    cutoutHeight = boxHeight - 2 * cutoutYSpace;
-    cutoutX = (plateLength - cutoutWidth) / 2;
-    cutoutY = railBottomThickness + cutoutYSpace;
+    u = findU(supportedZ, supportRailDefaultThickness);
+    supportRailBottomThick = railBottomThickness(u, supportedZ, supportRailDefaultThickness, zOrientation);
 
     difference() {
-        // Base plate
-        plate_base(
-            U = u,
-            plateThickness = plateThickness,
-            screwType = mainRailScrewType
-        );
+        union() {
+            // Base plate
+            plate_base(
+                U = u,
+                plateThickness = plateThickness,
+                screwType = mainRailScrewType,
+                screwToXEdge = boxPlateScrewToXEdge,
+                screwToYEdge = boxPlateScrewToYEdge,
+                filletR = 2
+            );
 
-        // Cutout for box face
-        translate([cutoutX, cutoutY, -eps])
-        cube([cutoutWidth, cutoutHeight, plateThickness + 2 * eps]);
-    }
+            // Bottom support ledge
+            translate([(rackMountScrewWidth - supportWidth) / 2, -boxPlateScrewToYEdge, 0])
+            cube([supportWidth, supportRailBottomThick, supportDepth]);
 
-    // Support lip below cutout
-    if (zOrientation == "bottom" && cutoutY > 3) {
-        translate([cutoutX - 2, cutoutY - 2, plateThickness])
-        cube([cutoutWidth + 4, 2, 3]);
+            // Top support ledge
+            translate([(rackMountScrewWidth - supportWidth) / 2, -boxPlateScrewToYEdge + supportRailBottomThick + supportedZ, 0])
+            cube([supportWidth, supportRailDefaultThickness, supportDepth]);
+        }
+
+        // Cutout with rounded corners
+        translate([cutoutOffsetX, cutoutOffsetY - boxPlateScrewToYEdge, -inf / 2])
+        minkowski() {
+            cornerR = 2;
+            cylinder(r = cornerR, h = inf, $fn = 32);
+            translate([cornerR, cornerR, 0])
+            cube([cutoutX - 2 * cornerR, cutoutY - 2 * cornerR, inf]);
+        }
     }
 }
-
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-/*
- * Calculate required rack units for a box height
- */
-function _find_u(boxHeight, railThickness, zOrientation) =
-    let(
-        minHeight = (zOrientation == "bottom")
-            ? boxHeight + railThickness
-            : boxHeight + 2 * railThickness
-    )
-    ceil(minHeight / EIA_UNIT_HEIGHT);
-
-/*
- * Calculate bottom rail thickness based on orientation
- */
-function _rail_bottom_thickness(u, boxHeight, railThickness, zOrientation) =
-    (zOrientation == "bottom")
-        ? railThickness
-        : (u * EIA_UNIT_HEIGHT - boxHeight - railThickness) / 2;
 
 // ============================================================================
 // EXAMPLE
 // ============================================================================
 
 module enclosed_box_example() {
-    // Assembled view with visualization
+    // Assembled view
     enclosed_box_system(
-        boxWidth = 140,
-        boxHeight = 28,
-        boxDepth = 100,
+        boxWidth = 159,
+        boxHeight = 27.2,
+        boxDepth = 101.5,
         visualize = true,
         splitForPrint = false
     );
 
-    // Parts spread for printing
+    // Split for printing
     translate([0, 150, 0])
     enclosed_box_system(
-        boxWidth = 140,
-        boxHeight = 28,
-        boxDepth = 100,
+        boxWidth = 159,
+        boxHeight = 27.2,
+        boxDepth = 101.5,
         visualize = false,
         splitForPrint = true
     );

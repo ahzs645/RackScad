@@ -7,6 +7,7 @@
  */
 
 include <common.scad>
+use <../components/screws.scad>
 
 // ============================================================================
 // TRAY CONFIGURATION

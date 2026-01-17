@@ -1,31 +1,33 @@
 /*
  * Rack Scad - Angle Bracket Rack Mount Type
- * Simple L-shaped brackets for mounting equipment
+ * Based on rackstack-main angle-bracket implementation
  *
- * Use this for equipment that has its own mounting holes
- * but needs adapters for rack mounting.
+ * Simple L-shaped brackets derived from the enclosed box system.
+ * Use for equipment that has its own mounting holes.
  */
 
 include <common.scad>
+use <enclosed_box.scad>
 
 // ============================================================================
-// ANGLE BRACKET CONFIGURATION
+// CONFIGURATION
 // ============================================================================
 
 DEFAULT_BRACKET_THICKNESS = 3;
-DEFAULT_BRACKET_DEPTH = 80;
-DEFAULT_BRACKET_WIDTH = 150;
+DEFAULT_BRACKET_DEPTH = 120;
+DEFAULT_BRACKET_WIDTH = 160;
 
 // ============================================================================
-// MAIN ANGLE BRACKET SYSTEM
+// ANGLE BRACKETS SYSTEM
+// Based on rackstack-main angle-bracket/entry.scad
 // ============================================================================
 
 /*
- * Create a pair of angle brackets for rack mounting
+ * Create a pair of angle brackets
  *
  * Parameters:
- *   boxWidth - Width of the equipment (space between brackets)
- *   boxDepth - Depth/length of the equipment
+ *   boxWidth - Width between the brackets (equipment width)
+ *   boxDepth - Depth of the brackets
  *   u - Rack units
  *   thickness - Bracket material thickness
  *   sideVent - Add ventilation slots
@@ -35,71 +37,54 @@ DEFAULT_BRACKET_WIDTH = 150;
 module angle_brackets(
     boxWidth = DEFAULT_BRACKET_WIDTH,
     boxDepth = DEFAULT_BRACKET_DEPTH,
-    u = 2,
+    u = 3,
     thickness = DEFAULT_BRACKET_THICKNESS,
     sideVent = false,
     visualize = false,
     splitForPrint = false
 ) {
-    bracketHeight = u * EIA_UNIT_HEIGHT - 2 * thickness;
-    bracketBaseWidth = 15;
+    // Calculate bracket height based on u (matching rackstack: 10*u - 2*thickness)
+    // Note: uDiff = screwDiff = 10 in default profile
+    bracketHeight = uDiff * u - 2 * thickness;
 
+    // Left bracket
+    color("SteelBlue")
+    side_support_rail_base(
+        top = false,
+        defaultThickness = thickness,
+        railSideThickness = thickness,
+        supportedZ = bracketHeight,
+        supportedY = boxDepth,
+        supportedX = boxWidth,
+        sideVent = sideVent
+    );
+
+    // Right bracket position
+    // When visualizing: position at actual box width
+    // When split for print: position at 30mm (matching rackstack)
+    rightRailTrans = visualize
+        ? [boxWidth, 0, 0]
+        : splitForPrint
+            ? [30, 0, 0]
+            : [boxWidth, 0, 0];
+
+    color("SteelBlue")
+    translate(rightRailTrans)
+    mirror([1, 0, 0])
+    side_support_rail_base(
+        top = false,
+        defaultThickness = thickness,
+        railSideThickness = thickness,
+        supportedZ = bracketHeight,
+        supportedY = boxDepth,
+        supportedX = boxWidth,
+        sideVent = sideVent
+    );
+
+    // Show equipment outline when visualizing
     if (visualize) {
-        // Show equipment outline
         %translate([thickness, 0, thickness])
-        cube([boxWidth, boxDepth, bracketHeight]);
-    }
-
-    if (splitForPrint) {
-        // Left bracket
-        color("SteelBlue")
-        angle_bracket_single(
-            depth = boxDepth,
-            height = bracketHeight,
-            thickness = thickness,
-            baseWidth = bracketBaseWidth,
-            u = u,
-            sideVent = sideVent
-        );
-
-        // Right bracket (mirrored and offset)
-        color("SteelBlue")
-        translate([bracketBaseWidth * 2 + 20, 0, 0])
-        mirror([1, 0, 0])
-        translate([-bracketBaseWidth, 0, 0])
-        angle_bracket_single(
-            depth = boxDepth,
-            height = bracketHeight,
-            thickness = thickness,
-            baseWidth = bracketBaseWidth,
-            u = u,
-            sideVent = sideVent
-        );
-    } else {
-        // Assembled position
-        // Left bracket
-        color("SteelBlue")
-        angle_bracket_single(
-            depth = boxDepth,
-            height = bracketHeight,
-            thickness = thickness,
-            baseWidth = bracketBaseWidth,
-            u = u,
-            sideVent = sideVent
-        );
-
-        // Right bracket
-        color("SteelBlue")
-        translate([boxWidth + 2 * thickness, 0, 0])
-        mirror([1, 0, 0])
-        angle_bracket_single(
-            depth = boxDepth,
-            height = bracketHeight,
-            thickness = thickness,
-            baseWidth = bracketBaseWidth,
-            u = u,
-            sideVent = sideVent
-        );
+        cube([boxWidth - 2 * thickness, boxDepth, bracketHeight]);
     }
 }
 
@@ -108,156 +93,106 @@ module angle_brackets(
 // ============================================================================
 
 /*
- * Create a single angle bracket
+ * Create a single angle bracket with customizable features
  *
  * Parameters:
  *   depth - Length of the bracket
- *   height - Vertical height of the side wall
+ *   height - Vertical height
  *   thickness - Material thickness
- *   baseWidth - Width of bottom flange
- *   u - Rack units
+ *   u - Rack units (overrides height if specified)
  *   sideVent - Add ventilation slots
- *   mountingHoles - Add holes for mounting equipment
- *   mountingHoleSpacing - Spacing of mounting holes
+ *   mountingHoles - Add holes for equipment mounting
+ *   mountingHoleSpacing - Spacing between mounting holes
  *   mountingHoleType - Screw type for mounting holes
  */
 module angle_bracket_single(
     depth = DEFAULT_BRACKET_DEPTH,
-    height = 40,
+    height = 0,
     thickness = DEFAULT_BRACKET_THICKNESS,
-    baseWidth = 15,
     u = 2,
     sideVent = false,
     mountingHoles = false,
-    mountingHoleSpacing = 30,
+    mountingHoleSpacing = 25,
     mountingHoleType = "M3"
 ) {
-    totalHeight = height + 2 * thickness;
+    // Use u-based height if height not specified
+    actualHeight = height > 0 ? height : uDiff * u - 2 * thickness;
 
     difference() {
-        union() {
-            // Bottom flange
-            cube([baseWidth, depth, thickness]);
-
-            // Side wall
-            cube([thickness, depth, totalHeight]);
-
-            // Top flange
-            translate([0, 0, totalHeight - thickness])
-            cube([baseWidth, depth, thickness]);
-
-            // Rack mounting ear
-            translate([0, 0, rackMountScrewZDist])
-            rack_ear(
-                u = u,
-                frontThickness = thickness,
-                sideThickness = thickness,
-                frontWidth = baseWidth + rackMountScrewXDist,
-                sideDepth = depth,
-                backPlaneHeight = totalHeight - rackMountScrewZDist,
-                support = true
-            );
-        }
-
-        // Ventilation slots
-        if (sideVent) {
-            _bracket_vent_slots(thickness, depth, totalHeight);
-        }
+        side_support_rail_base(
+            top = false,
+            defaultThickness = thickness,
+            railSideThickness = thickness,
+            supportedZ = actualHeight,
+            supportedY = depth,
+            supportedX = 100,  // Doesn't matter for single bracket
+            sideVent = sideVent
+        );
 
         // Equipment mounting holes
         if (mountingHoles) {
-            _bracket_mount_holes(baseWidth, depth, thickness, mountingHoleSpacing, mountingHoleType);
+            _bracket_mounting_holes(depth, actualHeight, thickness, mountingHoleSpacing, mountingHoleType);
         }
     }
 }
 
-/*
- * Internal: Add ventilation slots
- */
-module _bracket_vent_slots(sideThickness, depth, height) {
-    slotWidth = 3;
-    slotSpacing = 10;
+// Internal: Add mounting holes pattern
+module _bracket_mounting_holes(depth, height, thickness, spacing, screwType) {
+    holeR = screw_radius_slacked(screwType);
     margin = 15;
 
-    for (y = [margin:slotSpacing:depth - margin]) {
-        translate([-eps, y, height * 0.2])
-        cube([sideThickness + 2 * eps, slotWidth, height * 0.6]);
-    }
-}
-
-/*
- * Internal: Add mounting holes
- */
-module _bracket_mount_holes(baseWidth, depth, thickness, spacing, screwType) {
-    holeRadius = screw_radius_slacked(screwType);
-    margin = 10;
-    holeY = margin;
-
-    // Holes along the depth
-    while (holeY < depth - margin) {
-        // Bottom flange holes
-        translate([baseWidth / 2, holeY, -eps])
-        cylinder(r = holeRadius, h = thickness + 2 * eps, $fn = 32);
-
-        holeY = holeY + spacing;
+    // Holes along depth on bottom flange
+    for (y = [margin : spacing : depth - margin]) {
+        translate([sideRailBaseWidth / 2, y, -eps])
+        cylinder(r = holeR, h = thickness + 2 * eps, $fn = 32);
     }
 }
 
 // ============================================================================
 // ADJUSTABLE ANGLE BRACKET
-// With slotted holes for positioning
+// With slotted holes for position adjustment
 // ============================================================================
 
 /*
  * Create an angle bracket with slotted mounting holes
- * Allows adjustment of equipment position
  */
 module adjustable_angle_bracket(
     depth = 100,
     height = 40,
     thickness = 3,
-    baseWidth = 20,
     u = 2,
     slotLength = 15,
     slotWidth = 4
 ) {
-    totalHeight = height + 2 * thickness;
+    actualHeight = height > 0 ? height : uDiff * u - 2 * thickness;
 
     difference() {
-        // Basic bracket shape
         angle_bracket_single(
             depth = depth,
-            height = height,
+            height = actualHeight,
             thickness = thickness,
-            baseWidth = baseWidth,
             u = u,
             sideVent = false,
             mountingHoles = false
         );
 
         // Slotted holes in bottom flange
-        slotSpacing = 30;
-        margin = 15;
+        _add_slotted_holes(depth, thickness, slotLength, slotWidth);
+    }
+}
 
-        for (y = [margin:slotSpacing:depth - margin]) {
-            translate([baseWidth / 2, y, -eps])
-            hull() {
-                translate([-slotLength / 2, 0, 0])
-                cylinder(r = slotWidth / 2, h = thickness + 2 * eps, $fn = 32);
-                translate([slotLength / 2, 0, 0])
-                cylinder(r = slotWidth / 2, h = thickness + 2 * eps, $fn = 32);
-            }
-        }
+// Internal: Add slotted holes
+module _add_slotted_holes(depth, thickness, slotLength, slotWidth) {
+    slotSpacing = 30;
+    margin = 15;
 
-        // Slotted holes in top flange
-        for (y = [margin:slotSpacing:depth - margin]) {
-            translate([baseWidth / 2, y, totalHeight - thickness - eps])
-            hull() {
-                translate([-slotLength / 2, 0, 0])
-                cylinder(r = slotWidth / 2, h = thickness + 2 * eps, $fn = 32);
-                translate([slotLength / 2, 0, 0])
-                cylinder(r = slotWidth / 2, h = thickness + 2 * eps, $fn = 32);
-            }
+    for (y = [margin : slotSpacing : depth - margin]) {
+        translate([sideRailBaseWidth / 2, y, -eps])
+        hull() {
+            translate([-slotLength / 2, 0, 0])
+            cylinder(r = slotWidth / 2, h = thickness + 2 * eps, $fn = 32);
+            translate([slotLength / 2, 0, 0])
+            cylinder(r = slotWidth / 2, h = thickness + 2 * eps, $fn = 32);
         }
     }
 }
@@ -269,7 +204,6 @@ module adjustable_angle_bracket(
 
 /*
  * Create a universal mounting plate with hole grid
- * Attaches to angle brackets for flexible equipment mounting
  */
 module universal_mount_plate(
     width = 100,
@@ -279,17 +213,21 @@ module universal_mount_plate(
     holeType = "M3",
     margin = 10
 ) {
-    holeRadius = screw_radius_slacked(holeType);
+    holeR = screw_radius_slacked(holeType);
 
     difference() {
-        // Base plate
-        cube([width, depth, thickness]);
+        // Base plate with rounded corners
+        minkowski() {
+            translate([2, 2, 0])
+            cube([width - 4, depth - 4, thickness]);
+            cylinder(r = 2, h = eps, $fn = 32);
+        }
 
         // Grid of holes
-        for (x = [margin:holeSpacing:width - margin]) {
-            for (y = [margin:holeSpacing:depth - margin]) {
+        for (x = [margin : holeSpacing : width - margin]) {
+            for (y = [margin : holeSpacing : depth - margin]) {
                 translate([x, y, -eps])
-                cylinder(r = holeRadius, h = thickness + 2 * eps, $fn = 32);
+                cylinder(r = holeR, h = thickness + 2 * eps, $fn = 32);
             }
         }
     }
@@ -300,21 +238,21 @@ module universal_mount_plate(
 // ============================================================================
 
 module angle_bracket_example() {
-    // Basic bracket pair
-    color("SteelBlue")
+    // Assembled bracket pair with visualization
     angle_brackets(
         boxWidth = 140,
         boxDepth = 100,
-        u = 2,
-        visualize = true
+        u = 3,
+        visualize = true,
+        splitForPrint = false
     );
 
     // Split for printing
-    translate([0, 150, 0])
+    translate([0, 140, 0])
     angle_brackets(
         boxWidth = 140,
         boxDepth = 100,
-        u = 2,
+        u = 3,
         splitForPrint = true
     );
 
@@ -323,13 +261,12 @@ module angle_bracket_example() {
     translate([200, 0, 0])
     adjustable_angle_bracket(
         depth = 100,
-        height = 35,
         u = 2
     );
 
     // Universal mount plate
-    color("LightGreen")
-    translate([200, 150, 0])
+    color("Gold")
+    translate([200, 130, 0])
     universal_mount_plate(
         width = 100,
         depth = 80

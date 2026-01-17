@@ -1,30 +1,53 @@
 /*
  * Rack Scad - Patch Panel Rack Mount Type
- * Linear array of keystone module slots
+ * Linear array of keystone module slots with proper RJ45 measurements
  *
- * Use this for network patch panels, audio/video panels,
- * or any modular connector system.
+ * Based on rackstack-main keystone implementations with actual measured dimensions.
  */
 
 include <common.scad>
-use <../components/keystone.scad>
 
 // ============================================================================
-// KEYSTONE MODULE DIMENSIONS
-// Standard keystone jack dimensions
+// KEYSTONE MODULE DIMENSIONS (Measured from actual RJ45 keystones)
 // ============================================================================
 
-KEYSTONE_WIDTH = 14.5;          // Standard keystone width
-KEYSTONE_HEIGHT = 16;           // Standard keystone height (opening)
-KEYSTONE_SPACING = 19;          // Center-to-center spacing
-KEYSTONE_DEPTH = 18;            // Depth of keystone module
+// Type 1 Keystone (slot-to-slot) - Main body dimensions
+KEYSTONE_MAIN_BODY_WIDTH = 15.0;
+KEYSTONE_MAIN_BODY_HEIGHT = 16.90;
+KEYSTONE_MAIN_BODY_DEPTH = 32.90;
+
+// Hook and lug dimensions
+KEYSTONE_HEIGHT_WITH_HOOK_BODY = 20.2;
+KEYSTONE_HEIGHT_WITH_HOOK_CATCH = 21.30;
+KEYSTONE_WIDTH_WITH_SIDE_LUGS = 15.96;
+KEYSTONE_SIDE_LUG_WIDTH = (KEYSTONE_WIDTH_WITH_SIDE_LUGS - KEYSTONE_MAIN_BODY_WIDTH) / 2.0;
+KEYSTONE_HEIGHT_WITH_BOTTOM_LUG = 17.5;
+
+// Position dimensions
+KEYSTONE_FRONT_TO_HOOK_CATCH = 8.35;
+KEYSTONE_FRONT_TO_BOTTOM_LUG_BACK = 8.23;
+KEYSTONE_FRONT_TO_SIDE_LUG_FRONT = 10.63;
+
+// Type 2 Keystone (panel mount) dimensions
+KEYSTONE2_FRONT_WIDTH = 14.5;
+KEYSTONE2_FRONT_HEIGHT = 16.2;
+KEYSTONE2_FRONT_TO_REAR_DEPTH = 8.4;
+KEYSTONE2_REAR_WIDTH = 14.5;
+KEYSTONE2_REAR_HEIGHT = 19.55;
+KEYSTONE2_REAR_PANEL_THICKNESS = 2 - supportedOverhangSlack;
+KEYSTONE2_MAXIMUM_WIDTH = 14.5;
+KEYSTONE2_MAXIMUM_HEIGHT = 22.15;
+KEYSTONE2_LUG_HEIGHT = 1.3;
+
+// Standard spacing
+KEYSTONE_SPACING = 19;
 
 // Slot types:
-// 1 = Type 1 keystone (snap-in from front)
-// 2 = Type 2 keystone (snap-in from rear)
-// 3 = Blank plate
-// 4 = Thick blank (5.9mm)
-// 5 = Extra thick blank (9.9mm)
+// 1 = Type 1 keystone (snap-in from front, original design)
+// 2 = Type 2 keystone (cleaner look, keystone harder to remove)
+// 3 = Blank plate (thin)
+// 4 = Thick blank (5.9mm - matches keystone1 depth)
+// 5 = Extra thick blank (matches keystone2 depth)
 
 // ============================================================================
 // MAIN PATCH PANEL MODULE
@@ -34,16 +57,16 @@ KEYSTONE_DEPTH = 18;            // Depth of keystone module
  * Create a keystone patch panel
  *
  * Parameters:
- *   slots - Array of slot types [1, 1, 2, 3, 1, ...] or count
+ *   slots - Array of slot types [1, 2, 1, 3, ...] or just a count (defaults to type 2)
  *   u - Rack units (default 2U for standard panels)
- *   plateThickness - Panel thickness
+ *   plateThickness - Base panel thickness
  *   screwToXEdge - Distance from screw to edge
  *   screwToYEdge - Distance from screw to edge
- *   keystoneSpacing - Spacing between keystones
- *   centered - Center the keystone array
+ *   keystoneSpacing - Spacing between keystones (default 19mm)
+ *   centered - Center the keystone array horizontally
  */
 module patch_panel(
-    slots = [1, 1, 1, 1, 1, 1],
+    slots = [2, 2, 2, 2, 2, 2],
     u = 2,
     plateThickness = 3,
     screwToXEdge = 4.5,
@@ -52,7 +75,7 @@ module patch_panel(
     centered = true
 ) {
     // Handle both array and count inputs
-    slotArray = is_list(slots) ? slots : [for (i = [0:slots-1]) 1];
+    slotArray = is_list(slots) ? slots : [for (i = [0:slots-1]) 2];
     slotCount = len(slotArray);
 
     slotsWidth = slotCount * keystoneSpacing;
@@ -62,8 +85,11 @@ module patch_panel(
     plateHeight = u * screwDiff + 2 * screwToYEdge;
 
     leftRailScrewToSlots = centered
-        ? (plateLength - slotsWidth - slotsMinPadding) / 2
+        ? (plateLength - slotsWidth) / 2
         : slotsMinPadding;
+
+    // Calculate keystone slot height (centered in panel)
+    slotOuterHeight = plateHeight - 2 * screwToYEdge;
 
     difference() {
         // Base plate with mounting holes
@@ -76,9 +102,9 @@ module patch_panel(
             filletR = 2
         );
 
-        // Cutout for keystone area
+        // Cut out the slot area
         translate([leftRailScrewToSlots, screwToYEdge, -eps])
-        cube([slotsWidth, plateHeight - 2 * screwToYEdge, plateThickness + 2 * eps]);
+        cube([slotsWidth, slotOuterHeight, plateThickness + 2 * eps]);
     }
 
     // Add keystone holders
@@ -88,169 +114,173 @@ module patch_panel(
         slotY = plateHeight / 2;
 
         translate([slotX, slotY, 0])
-        _keystone_slot(slotType, keystoneSpacing, plateHeight - 2 * screwToYEdge, plateThickness);
+        _create_keystone_slot(slotType, keystoneSpacing, slotOuterHeight, plateThickness);
     }
 }
 
 /*
- * Internal: Create individual keystone slot
+ * Internal: Create individual keystone slot based on type
  */
-module _keystone_slot(slotType, outerWidth, outerHeight, plateThickness) {
+module _create_keystone_slot(slotType, outerWidth, outerHeight, plateThickness) {
     if (slotType == 1) {
-        // Type 1: Standard snap-in keystone holder
-        keystone_holder_type1(outerWidth, outerHeight, plateThickness);
+        keystone_type1(outerWidth = outerWidth, outerHeight = outerHeight);
     } else if (slotType == 2) {
-        // Type 2: Rear-insert keystone holder
-        keystone_holder_type2(outerWidth, outerHeight, plateThickness);
+        keystone_type2(plateThickness = plateThickness, outerWidth = outerWidth, outerHeight = outerHeight);
     } else if (slotType == 3) {
-        // Blank plate
-        _blank_plate(outerWidth, outerHeight, plateThickness);
+        _blank_plate_slot(outerWidth, outerHeight, plateThickness);
     } else if (slotType == 4) {
-        // Thick blank
-        _blank_plate(outerWidth, outerHeight, 5.9);
+        _blank_plate_slot(outerWidth, outerHeight, 5.9);
     } else if (slotType == 5) {
-        // Extra thick blank
-        _blank_plate(outerWidth, outerHeight, 9.9);
+        _blank_plate_slot(outerWidth, outerHeight, KEYSTONE2_FRONT_TO_REAR_DEPTH + KEYSTONE2_REAR_PANEL_THICKNESS);
     }
 }
 
 // ============================================================================
-// KEYSTONE HOLDER TYPE 1 (FRONT SNAP-IN)
+// KEYSTONE TYPE 1 (Original snap-in design)
+// Based on actual RJ45 keystone jack measurements
 // ============================================================================
 
 /*
- * Create a Type 1 keystone holder
- * Keystone snaps in from the front
+ * Create negative volume for RJ45 keystone jack
+ * This is the cutout shape that the keystone fits into
  */
-module keystone_holder_type1(outerWidth, outerHeight, thickness) {
-    wallThickness = (outerWidth - KEYSTONE_WIDTH) / 2 - xySlack;
-    slotHeight = KEYSTONE_HEIGHT + 2 * xySlack;
+module _rj45_keystone_negative() {
+    // Main keystone body
+    cube([KEYSTONE_MAIN_BODY_WIDTH + xySlack,
+          KEYSTONE_MAIN_BODY_DEPTH + xySlack,
+          KEYSTONE_MAIN_BODY_HEIGHT]);
 
-    // Side walls with snap hooks
+    // Slot for top hook
+    translate([0, KEYSTONE_FRONT_TO_HOOK_CATCH, 0])
+    cube([KEYSTONE_MAIN_BODY_WIDTH + xySlack,
+          KEYSTONE_MAIN_BODY_DEPTH - KEYSTONE_FRONT_TO_HOOK_CATCH + xySlack,
+          KEYSTONE_HEIGHT_WITH_HOOK_BODY]);
+
+    cube([KEYSTONE_MAIN_BODY_WIDTH + xySlack,
+          KEYSTONE_FRONT_TO_HOOK_CATCH + xySlack,
+          KEYSTONE_HEIGHT_WITH_HOOK_CATCH]);
+
+    // Slots for side lugs
+    translate([-KEYSTONE_SIDE_LUG_WIDTH, KEYSTONE_FRONT_TO_SIDE_LUG_FRONT, 0])
+    cube([KEYSTONE_WIDTH_WITH_SIDE_LUGS + xySlack,
+          KEYSTONE_MAIN_BODY_DEPTH - KEYSTONE_FRONT_TO_SIDE_LUG_FRONT + xySlack,
+          KEYSTONE_MAIN_BODY_HEIGHT]);
+
+    // Slots for bottom lugs
+    translate([0, 0, -(KEYSTONE_HEIGHT_WITH_BOTTOM_LUG - KEYSTONE_MAIN_BODY_HEIGHT)])
+    cube([KEYSTONE_MAIN_BODY_WIDTH + xySlack,
+          KEYSTONE_FRONT_TO_BOTTOM_LUG_BACK + xySlack,
+          KEYSTONE_MAIN_BODY_HEIGHT]);
+}
+
+/*
+ * Create clipped keystone negative for front face
+ */
+module _rj45_keystone_jack_clipped() {
+    translate([0, -4, 0.5])
+    intersection() {
+        translate([-2.5, 4, -4])
+        cube([20, 6, 28]);
+        _rj45_keystone_negative();
+    }
+}
+
+/*
+ * Create Type 1 keystone holder
+ * Original design where keystone snaps in from front
+ */
+module keystone_type1(outerWidth, outerHeight) {
+    slotDepth = 5.9;  // Standard keystone1 depth
+
+    rotate([0, 0, 180])  // Match keystone2 direction
     difference() {
-        union() {
-            // Left wall
-            translate([-outerWidth/2, -outerHeight/2, 0])
-            cube([wallThickness, outerHeight, thickness]);
+        // Outer holder body
+        translate([0, 0, slotDepth / 2])
+        cube([outerWidth, outerHeight, slotDepth], center = true);
 
-            // Right wall
-            translate([outerWidth/2 - wallThickness, -outerHeight/2, 0])
-            cube([wallThickness, outerHeight, thickness]);
-
-            // Top bar
-            translate([-outerWidth/2, outerHeight/2 - 3, 0])
-            cube([outerWidth, 3, thickness]);
-
-            // Bottom bar with relief for keystone latch
-            translate([-outerWidth/2, -outerHeight/2, 0])
-            cube([outerWidth, 3, thickness]);
-
-            // Snap hooks
-            _keystone_snap_hooks(outerWidth, thickness);
-        }
-
-        // Keystone opening
-        translate([-KEYSTONE_WIDTH/2 - xySlack, -slotHeight/2, -eps])
-        cube([KEYSTONE_WIDTH + 2*xySlack, slotHeight, thickness + 2*eps]);
+        // Keystone cutout
+        translate([-(KEYSTONE_MAIN_BODY_WIDTH + xySlack) / 2,
+                   (KEYSTONE_HEIGHT_WITH_HOOK_CATCH + KEYSTONE_HEIGHT_WITH_BOTTOM_LUG - KEYSTONE_MAIN_BODY_HEIGHT) / 2,
+                   0])
+        rotate([90, 0, 0])
+        _rj45_keystone_jack_clipped();
     }
 }
 
-/*
- * Internal: Create snap hooks for keystone
- */
-module _keystone_snap_hooks(width, thickness) {
-    hookWidth = 1.5;
-    hookDepth = 2;
-    hookHeight = 4;
-
-    // Left hook
-    translate([-width/2 + hookWidth, 0, thickness])
-    rotate([0, -45, 0])
-    cube([hookWidth, hookHeight, hookDepth], center = true);
-
-    // Right hook
-    translate([width/2 - hookWidth, 0, thickness])
-    rotate([0, 45, 0])
-    cube([hookWidth, hookHeight, hookDepth], center = true);
-}
-
 // ============================================================================
-// KEYSTONE HOLDER TYPE 2 (REAR INSERT)
+// KEYSTONE TYPE 2 (Cleaner panel mount design)
+// Keystone inserts from rear, cleaner front appearance
 // ============================================================================
 
 /*
- * Create a Type 2 keystone holder
- * Keystone inserts from the rear
+ * Create Type 2 keystone holder
+ * Cleaner look but keystone is slightly harder to remove
  */
-module keystone_holder_type2(outerWidth, outerHeight, thickness) {
-    wallThickness = (outerWidth - KEYSTONE_WIDTH) / 2 - xySlack;
-    frontOpening = KEYSTONE_WIDTH - 3;  // Slightly smaller front opening
-    slotHeight = KEYSTONE_HEIGHT + 2 * xySlack;
+module keystone_type2(plateThickness = 3, outerWidth, outerHeight) {
+    totalDepth = KEYSTONE2_FRONT_TO_REAR_DEPTH + KEYSTONE2_REAR_PANEL_THICKNESS;
 
     difference() {
-        union() {
-            // Left wall
-            translate([-outerWidth/2, -outerHeight/2, 0])
-            cube([wallThickness + 1.5, outerHeight, thickness]);
+        // Outer body
+        translate([-outerWidth / 2, -outerHeight / 2, 0])
+        cube([outerWidth, outerHeight, totalDepth]);
 
-            // Right wall
-            translate([outerWidth/2 - wallThickness - 1.5, -outerHeight/2, 0])
-            cube([wallThickness + 1.5, outerHeight, thickness]);
+        // Front panel hole (where you see the RJ45 port)
+        translate([-(KEYSTONE2_FRONT_WIDTH + xySlack) / 2,
+                   -(KEYSTONE2_FRONT_HEIGHT + xySlack) / 2,
+                   -eps])
+        cube([KEYSTONE2_FRONT_WIDTH + xySlack,
+              KEYSTONE2_FRONT_HEIGHT + xySlack,
+              plateThickness + eps]);
 
-            // Top retention bar
-            translate([-outerWidth/2, outerHeight/2 - 3, 0])
-            cube([outerWidth, 3, thickness + 2]);
+        // Middle cavity (where keystone body sits)
+        translate([-(KEYSTONE2_MAXIMUM_WIDTH + xySlack) / 2,
+                   -KEYSTONE2_FRONT_HEIGHT / 2 - KEYSTONE2_LUG_HEIGHT - xySlack / 2,
+                   plateThickness])
+        cube([KEYSTONE2_REAR_WIDTH + xySlack,
+              outerHeight + 100,  // Extends beyond for lug clearance
+              KEYSTONE2_FRONT_TO_REAR_DEPTH - plateThickness + eps]);
 
-            // Bottom retention bar
-            translate([-outerWidth/2, -outerHeight/2, 0])
-            cube([outerWidth, 3, thickness + 2]);
-        }
-
-        // Front opening (smaller, keystone face shows through)
-        translate([-frontOpening/2, -slotHeight/2, -eps])
-        cube([frontOpening, slotHeight, thickness + 3]);
-
-        // Rear opening (full keystone size for insertion)
-        translate([-KEYSTONE_WIDTH/2 - xySlack, -slotHeight/2, thickness - 1])
-        cube([KEYSTONE_WIDTH + 2*xySlack, slotHeight, 4]);
+        // Rear panel hole (where cable connects)
+        translate([-(KEYSTONE2_REAR_WIDTH + xySlack) / 2,
+                   -(KEYSTONE2_FRONT_HEIGHT + xySlack) / 2,
+                   KEYSTONE2_FRONT_TO_REAR_DEPTH])
+        cube([KEYSTONE2_REAR_WIDTH + xySlack,
+              KEYSTONE2_REAR_HEIGHT + xySlack,
+              KEYSTONE2_REAR_PANEL_THICKNESS + eps]);
     }
 }
 
 // ============================================================================
-// BLANK PLATE
+// BLANK PLATE SLOT
 // ============================================================================
 
-/*
- * Create a blank plate for unused slots
- */
-module _blank_plate(outerWidth, outerHeight, thickness) {
-    translate([-outerWidth/2, -outerHeight/2, 0])
+module _blank_plate_slot(outerWidth, outerHeight, thickness) {
+    translate([-outerWidth / 2, -outerHeight / 2, 0])
     cube([outerWidth, outerHeight, thickness]);
 }
 
 // ============================================================================
-// LABELED PATCH PANEL
+// LABELED PATCH PANEL (with label strip)
 // ============================================================================
 
 /*
- * Create a patch panel with labels
- *
- * Parameters:
- *   slots - Array of slot types
- *   labels - Array of label strings
- *   labelHeight - Height of label area
- *   ... (other parameters same as patch_panel)
+ * Create a patch panel with a label strip above the ports
  */
 module labeled_patch_panel(
-    slots = [1, 1, 1, 1],
+    slots = [2, 2, 2, 2],
     labels = [],
     labelHeight = 8,
     u = 2,
     plateThickness = 3,
     keystoneSpacing = KEYSTONE_SPACING
 ) {
-    // Main panel (shifted down to make room for labels)
-    translate([0, labelHeight/2, 0])
+    slotCount = is_list(slots) ? len(slots) : slots;
+    slotsWidth = slotCount * keystoneSpacing;
+    plateLength = rackMountScrewWidth + 2 * 4.5;
+    plateHeight = u * screwDiff + 2 * 4.5;
+    leftOffset = (plateLength - slotsWidth) / 2;
+
+    // Main panel
     patch_panel(
         slots = slots,
         u = u,
@@ -258,16 +288,33 @@ module labeled_patch_panel(
         keystoneSpacing = keystoneSpacing
     );
 
-    // Label area at top
-    slotCount = is_list(slots) ? len(slots) : slots;
-    slotsWidth = slotCount * keystoneSpacing;
-    plateLength = rackMountScrewWidth + 2 * 4.5;
-    leftOffset = (plateLength - slotsWidth) / 2;
-
-    // Label strip (raised area for writing/labeling)
+    // Label strip (raised white area for writing/labeling)
     color("White")
-    translate([leftOffset, u * screwDiff + 4.5, plateThickness])
-    cube([slotsWidth, labelHeight, 0.5]);
+    translate([leftOffset, plateHeight - 4.5 - labelHeight, plateThickness])
+    cube([slotsWidth, labelHeight, 0.6]);
+}
+
+// ============================================================================
+// PATCH PANEL SYSTEM (matches rackstack entry point)
+// ============================================================================
+
+/*
+ * Complete patch panel system matching rackstack-main interface
+ */
+module patch_panel_system(
+    slots = [2, 2, 2, 2, 2, 2],
+    plateThickness = 3,
+    keystoneSpacing = 19,
+    centered = true
+) {
+    mirror([0, 0, 1])
+    patch_panel(
+        slots = slots,
+        u = 2,
+        plateThickness = plateThickness,
+        keystoneSpacing = keystoneSpacing,
+        centered = centered
+    );
 }
 
 // ============================================================================
@@ -275,27 +322,27 @@ module labeled_patch_panel(
 // ============================================================================
 
 module patch_panel_example() {
-    // Basic 6-port patch panel
+    // 6-port panel with Type 2 keystones (cleaner look)
     color("SteelBlue")
     patch_panel(
-        slots = [1, 1, 1, 1, 1, 1],
+        slots = [2, 2, 2, 2, 2, 2],
         u = 2,
         centered = true
     );
 
-    // Mixed slot types (offset for visibility)
+    // Mixed slot types
     color("Coral")
-    translate([0, 100, 0])
+    translate([0, 120, 0])
     patch_panel(
-        slots = [1, 1, 2, 3, 1, 1],  // Type1, Type1, Type2, Blank, Type1, Type1
+        slots = [1, 2, 2, 3, 2, 1],  // Mix of Type1, Type2, and Blank
         u = 2
     );
 
-    // 12-port panel
+    // 9-port panel with blank separator
     color("LightGreen")
-    translate([0, 200, 0])
+    translate([0, 240, 0])
     patch_panel(
-        slots = [for (i = [0:11]) 1],  // 12 Type 1 slots
+        slots = [2, 2, 2, 2, 5, 2, 2, 2, 2],  // 4 ports, thick blank, 4 ports
         u = 2
     );
 }
