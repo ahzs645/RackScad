@@ -16,11 +16,12 @@ use <components/cage.scad>
 use <components/ruler.scad>
 use <components/honeycomb.scad>
 use <components/rack_ears.scad>
+use <components/joiners.scad>
 
 /* [Example Selection] */
 
 // Select which example to display
-example = 18; // [1:Basic Shapes, 2:Standalone Faceplate, 3:Faceplate with Ears, 4:Keystone Jacks, 5:Fan Grills, 6:Fan Cutout with Holes, 7:Cage Structure, 8:Cage with Honeycomb, 9:Preview Guides, 10:Two Stacked Cages, 11:Side-by-Side Cages, 12:Dual Fan Faceplate, 13:Keystone Patch Panel, 14:Simple Rack Ears, 15:Fusion Rack Ears, 16:Faceplate with Rack Ears, 17:Full Cage with Fusion Ears, 18:Faceplate with Bottom Hooks]
+example = 21; // [1:Basic Shapes, 2:Standalone Faceplate, 3:Faceplate with Ears, 4:Keystone Jacks, 5:Fan Grills, 6:Fan Cutout with Holes, 7:Cage Structure, 8:Cage with Honeycomb, 9:Preview Guides, 10:Two Stacked Cages, 11:Side-by-Side Cages, 12:Dual Fan Faceplate, 13:Keystone Patch Panel, 14:Simple Rack Ears, 15:Fusion Rack Ears, 16:Faceplate with Rack Ears, 17:Full Cage with Fusion Ears, 18:Faceplate with Bottom Hooks, 19:Joiner Parts, 20:Joiner Assembled View, 21:Modular Faceplate Sections]
 
 
 /* [Hide] */
@@ -624,6 +625,113 @@ module example_faceplate_with_bottom_hooks()
 
 
 // ============================================================
+// EXAMPLE 19: Joiner Bracket Parts (Left and Right)
+// Individual joiner brackets for connecting faceplate sections
+// Uses M5 screws and hex nuts for assembly
+// ============================================================
+module example_joiner_parts()
+{
+    // Display left and right joiner brackets side by side
+    // 1U version with 3 screws
+    translate([0, 50, 0])
+    {
+        color("SteelBlue")
+            faceplate_joiner_left(
+                unit_height = 1,
+                faceplate_width = 60
+            );
+
+        translate([80, 0, 0])
+            color("Coral")
+                faceplate_joiner_right(
+                    unit_height = 1,
+                    faceplate_width = 60
+                );
+    }
+
+    // 2U version with 6 screws
+    translate([0, -60, 0])
+    {
+        color("SteelBlue")
+            faceplate_joiner_left(
+                unit_height = 2,
+                faceplate_width = 60
+            );
+
+        translate([80, 0, 0])
+            color("Coral")
+                faceplate_joiner_right(
+                    unit_height = 2,
+                    faceplate_width = 60
+                );
+    }
+}
+
+
+// ============================================================
+// EXAMPLE 20: Joiner Assembled View
+// Shows how joiner brackets mate together
+// ============================================================
+module example_joiner_assembled()
+{
+    // Exploded view (parts separated)
+    translate([0, 60, 0])
+    {
+        echo("Exploded view - 1U joiner with 3x M5 screws");
+        faceplate_joiner_assembled(
+            unit_height = 1,
+            faceplate_width = 60,
+            explode = 30
+        );
+    }
+
+    // Assembled view (parts mated)
+    translate([0, -40, 0])
+    {
+        echo("Assembled view - 2U joiner with 6x M5 screws");
+        faceplate_joiner_assembled(
+            unit_height = 2,
+            faceplate_width = 60,
+            explode = 0
+        );
+    }
+}
+
+
+// ============================================================
+// EXAMPLE 21: Joiner Pair for Printing
+// Both left and right parts laid out for 3D printing
+// ============================================================
+module example_modular_faceplate_sections()
+{
+    // Pair of 1U joiners ready for printing
+    translate([0, 50, 0])
+        faceplate_joiner_pair(
+            unit_height = 1,
+            faceplate_width = 80,
+            spacing = 15
+        );
+
+    // Pair of 2U joiners ready for printing
+    translate([0, -60, 0])
+        faceplate_joiner_pair(
+            unit_height = 2,
+            faceplate_width = 80,
+            spacing = 15
+        );
+
+    // Text annotation (visible in preview)
+    %translate([0, -130, 0])
+        linear_extrude(1)
+            text("M5 screws: 10-16mm, M5 hex nuts", size=6, halign="center");
+
+    %translate([0, -140, 0])
+        linear_extrude(1)
+            text("3 screws per 1U (6 per 2U)", size=5, halign="center");
+}
+
+
+// ============================================================
 // Render selected example
 // ============================================================
 if (example == 1) example_basic_shapes();
@@ -644,3 +752,6 @@ else if (example == 15) example_fusion_rack_ears();
 else if (example == 16) example_faceplate_with_rack_ears();
 else if (example == 17) example_cage_with_fusion_ears();
 else if (example == 18) example_faceplate_with_bottom_hooks();
+else if (example == 19) example_joiner_parts();
+else if (example == 20) example_joiner_assembled();
+else if (example == 21) example_modular_faceplate_sections();
