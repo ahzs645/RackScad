@@ -363,8 +363,16 @@ module _enclosed_box_rails_library(dev_w, dev_h, dev_d) {
     u = findU(dev_h, rail_thickness);
     rail_bottom = railBottomThickness(u, dev_h, rail_thickness, "middle");
 
+    // The side_support_rail_base creates rails with:
+    //   - Depth extending in +Y
+    //   - Height extending in +Z
+    // After our main rotate([-90,0,0]), we need to pre-rotate by [90,0,0]
+    // so that the rail's Y->Z (becomes Y after main rotation = depth)
+    // and rail's Z->-Y (becomes Z after main rotation = height)
+
     // Left rail - using library module
-    translate([-dev_w/2 - rail_side_thick, -dev_h/2 - rail_bottom, 0])
+    translate([-dev_w/2 - rail_side_thick, 0, -dev_h/2 - rail_bottom])
+    rotate([90, 0, 0])
     side_support_rail_base(
         top = true,
         recess = false,
@@ -378,7 +386,8 @@ module _enclosed_box_rails_library(dev_w, dev_h, dev_d) {
     );
 
     // Right rail (mirrored)
-    translate([dev_w/2, -dev_h/2 - rail_bottom, 0])
+    translate([dev_w/2, 0, -dev_h/2 - rail_bottom])
+    rotate([90, 0, 0])
     mirror([1, 0, 0])
     translate([-rail_side_thick, 0, 0])
     side_support_rail_base(
