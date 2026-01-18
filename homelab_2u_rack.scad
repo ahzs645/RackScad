@@ -353,54 +353,62 @@ module _device_mount_structure(dev_w, dev_h, dev_d, offset_x, offset_y, mount_ty
     }
 }
 
-// Enclosed box style using library side_support_rail_base
-// From rack_mounts/enclosed_box.scad (Example 27)
+// Enclosed box style - side rails inspired by enclosed_box.scad (Example 27)
+// Simplified for our faceplate coordinate system
+// In cage coords: X=horizontal, Y=vertical, Z=depth (extending behind faceplate)
 module _enclosed_box_rails_library(dev_w, dev_h, dev_d) {
-    rail_thickness = 1.5;    // Default rail thickness
+    rail_top_thick = 1.5;    // Top/bottom rail thickness
     rail_side_thick = 3;     // Side wall thickness
+    rail_base_width = sideRailBaseWidth;  // From library: 15mm
+    actual_depth = dev_d + 5;
 
-    // Calculate the rail bottom thickness based on device height
-    u = findU(dev_h, rail_thickness);
-    rail_bottom = railBottomThickness(u, dev_h, rail_thickness, "middle");
-
-    // The side_support_rail_base creates rails with:
-    //   - Depth extending in +Y
-    //   - Height extending in +Z
-    // After our main rotate([-90,0,0]), we need to pre-rotate by [90,0,0]
-    // so that the rail's Y->Z (becomes Y after main rotation = depth)
-    // and rail's Z->-Y (becomes Z after main rotation = height)
-
-    // Left rail - using library module
-    translate([-dev_w/2 - rail_side_thick, 0, -dev_h/2 - rail_bottom])
-    rotate([90, 0, 0])
-    side_support_rail_base(
-        top = true,
-        recess = false,
-        defaultThickness = rail_thickness,
-        supportedZ = dev_h,
-        supportedY = dev_d,
-        supportedX = dev_w,
-        zOrientation = "middle",
-        railSideThickness = rail_side_thick,
-        sideVent = true
-    );
+    // Left rail
+    translate([-dev_w/2 - rail_side_thick, -dev_h/2 - rail_top_thick, 0])
+    _enclosed_side_rail(dev_h, actual_depth, rail_top_thick, rail_side_thick, rail_base_width);
 
     // Right rail (mirrored)
-    translate([dev_w/2, 0, -dev_h/2 - rail_bottom])
-    rotate([90, 0, 0])
+    translate([dev_w/2 + rail_side_thick, -dev_h/2 - rail_top_thick, 0])
     mirror([1, 0, 0])
-    translate([-rail_side_thick, 0, 0])
-    side_support_rail_base(
-        top = true,
-        recess = false,
-        defaultThickness = rail_thickness,
-        supportedZ = dev_h,
-        supportedY = dev_d,
-        supportedX = dev_w,
-        zOrientation = "middle",
-        railSideThickness = rail_side_thick,
-        sideVent = true
-    );
+    _enclosed_side_rail(dev_h, actual_depth, rail_top_thick, rail_side_thick, rail_base_width);
+}
+
+// Single side rail for enclosed box mount
+// Coordinate system: X=width of rail, Y=height of rail, Z=depth extending backward
+module _enclosed_side_rail(dev_h, depth, rail_thick, side_thick, base_width) {
+    total_h = dev_h + 2 * rail_thick;
+
+    difference() {
+        union() {
+            // Side wall (vertical plate along the device)
+            cube([side_thick, total_h, depth]);
+
+            // Bottom support ledge
+            cube([base_width, rail_thick, depth]);
+
+            // Top support ledge (lip to hold device)
+            translate([0, total_h - rail_thick, 0])
+            cube([base_width, rail_thick, depth]);
+
+            // Back wall
+            translate([0, 0, depth - side_thick])
+            cube([base_width, total_h, side_thick]);
+        }
+
+        // Ventilation slots in side wall (rounded rectangles)
+        vent_margin = 8;
+        slot_spacing = 25;
+        slot_width = 12;
+        slot_height = max(10, dev_h * 0.5);
+        slot_y = rail_thick + (dev_h - slot_height) / 2;
+
+        for (z = [vent_margin : slot_spacing : depth - vent_margin - slot_width]) {
+            translate([-0.1, slot_y, z])
+            hull() {
+                translate([0, 2, 0]) cube([side_thick + 0.2, slot_height - 4, 0.1]);
+                translate([0, 2, slot_width]) cube([side_thick + 0.2, slot_height - 4, 0.1]);
+            }
+        }
+    }
 }
 
 // Angle bracket style cage (L-shaped sides)
