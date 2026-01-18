@@ -553,7 +553,7 @@ module _rack_ear_left() {
     if (ear_style == "toolless") {
         // Toolless hooks (Example 18 style) - just the hook, no L-bracket
         // Position at left edge, hook pointing left (-X), profile vertical (Z)
-        translate([-ear_thickness, 0, 0])
+        translate([0, 0, 0])
         rotate([90, 0, 0])
         mirror([1, 0, 0])
         rotate([0, 90, 90])
