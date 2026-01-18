@@ -377,7 +377,8 @@ module _enclosed_box_rails_library(dev_w, dev_h, dev_d) {
     // This is achieved with rotate([90, 0, 0])
 
     // Left rail
-    translate([-dev_w/2 - rail_side_thick, dev_h/2 + rail_bottom, 0])
+    // Y offset controls vertical position: less Y = higher in final rack coords
+    translate([-dev_w/2 - rail_side_thick, dev_h/2, 0])
     rotate([90, 0, 0])
     side_support_rail_base(
         top = true,
@@ -392,7 +393,7 @@ module _enclosed_box_rails_library(dev_w, dev_h, dev_d) {
     );
 
     // Right rail (mirrored)
-    translate([dev_w/2, dev_h/2 + rail_bottom, 0])
+    translate([dev_w/2, dev_h/2, 0])
     rotate([90, 0, 0])
     mirror([1, 0, 0])
     side_support_rail_base(
