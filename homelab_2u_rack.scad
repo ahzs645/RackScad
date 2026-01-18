@@ -20,6 +20,8 @@ use <components/cage.scad>
 use <components/keystone.scad>
 use <components/joiners.scad>
 use <rack_mounts/angle_bracket.scad>
+include <rack_mounts/common.scad>
+use <rack_mounts/enclosed_box.scad>
 
 // ============================================================================
 // CUSTOMIZER CONFIGURATION
@@ -36,28 +38,28 @@ show_labels = true;
 
 /* [Device 1: Minisforum UM890 Pro] */
 minisforum_enabled = true;
-minisforum_mount_type = "cage"; // [cage:Full Cage (CageMaker), angle:Angle Brackets, simple:Simple Box, none:Cutout Only]
+minisforum_mount_type = "cage"; // [cage:Cage with Honeycomb, cage_rect:Cage with Slots, enclosed:Enclosed Box (Side Rails), angle:Angle Brackets, simple:Simple Box, none:Cutout Only]
 minisforum_face_w = 128;  // Width (side to side)
 minisforum_face_h = 52;   // Height
 minisforum_depth = 126;   // Depth to back
 
 /* [Device 2: UCG-Fiber] */
 ucg_enabled = true;
-ucg_mount_type = "cage"; // [cage:Full Cage (CageMaker), angle:Angle Brackets, simple:Simple Box, none:Cutout Only]
+ucg_mount_type = "cage"; // [cage:Cage with Honeycomb, cage_rect:Cage with Slots, enclosed:Enclosed Box (Side Rails), angle:Angle Brackets, simple:Simple Box, none:Cutout Only]
 ucg_face_w = 213;
 ucg_face_h = 30;
 ucg_depth = 128;
 
 /* [Device 3: JetKVM] */
 jetkvm_enabled = true;
-jetkvm_mount_type = "cage"; // [cage:Full Cage (CageMaker), angle:Angle Brackets, simple:Simple Box, none:Cutout Only]
+jetkvm_mount_type = "cage"; // [cage:Cage with Honeycomb, cage_rect:Cage with Slots, enclosed:Enclosed Box (Side Rails), angle:Angle Brackets, simple:Simple Box, none:Cutout Only]
 jetkvm_face_w = 43;
 jetkvm_face_h = 31;
 jetkvm_depth = 60;
 
 /* [Device 4: Lutron Caseta] */
 lutron_enabled = true;
-lutron_mount_type = "cage"; // [cage:Full Cage (CageMaker), angle:Angle Brackets, simple:Simple Box, none:Cutout Only]
+lutron_mount_type = "cage"; // [cage:Cage with Honeycomb, cage_rect:Cage with Slots, enclosed:Enclosed Box (Side Rails), angle:Angle Brackets, simple:Simple Box, none:Cutout Only]
 lutron_face_w = 70;
 lutron_face_h = 31;
 lutron_depth = 70;
@@ -76,13 +78,10 @@ device_clearance = 1.0;
 // Wall thickness level (0=standard 4mm, 1=thick 5mm, 2=extra 6mm)
 heavy_device = 0; // [0:Standard, 1:Thick, 2:Extra Thick]
 
-// Use honeycomb ventilation (vs rectangular slots)
-use_honeycomb = true;
-
-// Honeycomb hole diameter
+// Honeycomb hole diameter (for Cage with Honeycomb)
 hex_diameter = 8; // [4:12]
 
-// Honeycomb wall thickness
+// Honeycomb wall thickness (for Cage with Honeycomb)
 hex_wall = 2; // [1:4]
 
 // Add extra center support for wide devices
@@ -305,7 +304,7 @@ module _right_geometry() {
 
 module _device_mount_structure(dev_w, dev_h, dev_d, offset_x, offset_y, mount_type) {
     if (mount_type == "cage") {
-        // Use the actual cage_structure from components/cage.scad
+        // Cage with honeycomb ventilation (Example 8 style)
         cage_structure(
             offset_x = offset_x,
             offset_y = offset_y,
@@ -318,10 +317,31 @@ module _device_mount_structure(dev_w, dev_h, dev_d, offset_x, offset_y, mount_ty
             cutout_edge = 5,
             cutout_radius = 5,
             is_split = false,
-            use_honeycomb = use_honeycomb,
+            use_honeycomb = true,
             hex_dia = hex_diameter,
             hex_wall = hex_wall
         );
+    } else if (mount_type == "cage_rect") {
+        // Cage with rectangular slot ventilation (Example 7 style)
+        cage_structure(
+            offset_x = offset_x,
+            offset_y = offset_y,
+            device_width = dev_w,
+            device_height = dev_h,
+            device_depth = dev_d,
+            device_clearance = device_clearance,
+            heavy_device = heavy_device,
+            extra_support = extra_support,
+            cutout_edge = 5,
+            cutout_radius = 5,
+            is_split = false,
+            use_honeycomb = false
+        );
+    } else if (mount_type == "enclosed") {
+        // Enclosed box with side rails (Example 27 style)
+        // Uses library side_support_rail_base from rack_mounts/enclosed_box.scad
+        translate([offset_x, offset_y, plate_thick])
+        _enclosed_box_rails_library(dev_w, dev_h, dev_d);
     } else if (mount_type == "angle") {
         // Use angle bracket style from rack_mounts/angle_bracket.scad
         translate([offset_x - dev_w/2, offset_y - dev_h/2, plate_thick])
@@ -331,6 +351,47 @@ module _device_mount_structure(dev_w, dev_h, dev_d, offset_x, offset_y, mount_ty
         translate([offset_x, offset_y, plate_thick])
         _simple_box_cage(dev_w, dev_h, dev_d);
     }
+}
+
+// Enclosed box style using library side_support_rail_base
+// From rack_mounts/enclosed_box.scad (Example 27)
+module _enclosed_box_rails_library(dev_w, dev_h, dev_d) {
+    rail_thickness = 1.5;    // Default rail thickness
+    rail_side_thick = 3;     // Side wall thickness
+
+    // Calculate the rail bottom thickness based on device height
+    u = findU(dev_h, rail_thickness);
+    rail_bottom = railBottomThickness(u, dev_h, rail_thickness, "middle");
+
+    // Left rail - using library module
+    translate([-dev_w/2 - rail_side_thick, -dev_h/2 - rail_bottom, 0])
+    side_support_rail_base(
+        top = true,
+        recess = false,
+        defaultThickness = rail_thickness,
+        supportedZ = dev_h,
+        supportedY = dev_d,
+        supportedX = dev_w,
+        zOrientation = "middle",
+        railSideThickness = rail_side_thick,
+        sideVent = true
+    );
+
+    // Right rail (mirrored)
+    translate([dev_w/2, -dev_h/2 - rail_bottom, 0])
+    mirror([1, 0, 0])
+    translate([-rail_side_thick, 0, 0])
+    side_support_rail_base(
+        top = true,
+        recess = false,
+        defaultThickness = rail_thickness,
+        supportedZ = dev_h,
+        supportedY = dev_d,
+        supportedX = dev_w,
+        zOrientation = "middle",
+        railSideThickness = rail_side_thick,
+        sideVent = true
+    );
 }
 
 // Angle bracket style cage (L-shaped sides)
