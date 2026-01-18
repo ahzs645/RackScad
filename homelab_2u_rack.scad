@@ -181,10 +181,10 @@ module _left_geometry() {
             _rack_ear_left();
 
             // Joining wall (uses library joiner component)
-            // Left half gets the "left" joiner with screw holes
-            // Oriented to face right (towards the joint)
+            // Left half gets joiner with screw holes - wall ends at joint edge (X=left_width)
+            // rotate([-90,0,0]) flips wall to extend behind faceplate (+Y)
             translate([left_width, 0, rack_height/2])
-            rotate([90, 0, 90])
+            rotate([-90, 0, 0])
             joiner_wall_addon(unit_height = rack_u, side = "left");
 
             // Device mount (extends behind faceplate in +Y direction)
@@ -227,10 +227,10 @@ module _right_geometry() {
             _rack_ear_right();
 
             // Joining wall (uses library joiner component)
-            // Right half gets the "right" joiner with hex nut pockets
-            // Oriented to face left (towards the joint)
+            // Right half gets joiner with nut pockets - wall starts at joint edge (X=0)
+            // rotate([-90,0,0]) flips wall to extend behind faceplate (+Y)
             translate([0, 0, rack_height/2])
-            rotate([90, 0, -90])
+            rotate([-90, 0, 0])
             joiner_wall_addon(unit_height = rack_u, side = "right");
 
             // UCG-Fiber mount (bottom)
