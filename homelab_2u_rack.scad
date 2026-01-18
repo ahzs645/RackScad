@@ -188,8 +188,9 @@ module _left_geometry() {
             joiner_wall_addon(unit_height = rack_u, side = "left");
 
             // Device mount (extends behind faceplate in +Y direction)
+            // Cage reinforcing block starts at Z=2.5 in cage coords, which overlaps into faceplate
             if (minisforum_enabled && minisforum_mount_type != "none") {
-                translate([center_x, plate_thick, center_z])
+                translate([center_x, 0, center_z])
                 rotate([-90, 0, 0])
                 _device_mount_structure(
                     minisforum_face_w, minisforum_face_h, minisforum_depth,
@@ -234,8 +235,9 @@ module _right_geometry() {
             joiner_wall_addon(unit_height = rack_u, side = "right");
 
             // UCG-Fiber mount (bottom)
+            // Cage reinforcing block starts at Z=2.5 in cage coords, which overlaps into faceplate
             if (ucg_enabled && ucg_mount_type != "none") {
-                translate([center_x, plate_thick, center_z])
+                translate([center_x, 0, center_z])
                 rotate([-90, 0, 0])
                 _device_mount_structure(
                     ucg_face_w, ucg_face_h, ucg_depth,
@@ -246,7 +248,7 @@ module _right_geometry() {
 
             // JetKVM mount (upper left)
             if (jetkvm_enabled && jetkvm_mount_type != "none") {
-                translate([center_x, plate_thick, center_z])
+                translate([center_x, 0, center_z])
                 rotate([-90, 0, 0])
                 _device_mount_structure(
                     jetkvm_face_w, jetkvm_face_h, jetkvm_depth,
@@ -257,7 +259,7 @@ module _right_geometry() {
 
             // Lutron mount (upper center)
             if (lutron_enabled && lutron_mount_type != "none") {
-                translate([center_x, plate_thick, center_z])
+                translate([center_x, 0, center_z])
                 rotate([-90, 0, 0])
                 _device_mount_structure(
                     lutron_face_w, lutron_face_h, lutron_depth,
@@ -268,7 +270,7 @@ module _right_geometry() {
 
             // SLZB keystone mount (upper right)
             if (slzb_enabled && slzb_mount_type != "none") {
-                translate([center_x, plate_thick, center_z])
+                translate([center_x, 0, center_z])
                 rotate([-90, 0, 0])
                 _slzb_mount_structure(slzb_offset_x, -upper_row_y);
             }
