@@ -1,12 +1,13 @@
 /**
  * Rack Scad - Joiner Examples
  *
- * Dedicated examples file for faceplate joiner brackets.
- * These brackets allow separately printed rack panels to be
- * screwed together using M5 hardware.
+ * Dedicated examples file for faceplate joiner walls.
+ * These thin vertical walls allow separately printed rack panels
+ * to be screwed together face-to-face using M5 hardware.
  *
- * Screw Pattern: Triangle layout (2 near edge, 1 further back)
- * Hardware: M5 screws (10-16mm) + M5 hex nuts
+ * Design: Thin wall (4mm) with rounded top at joint edge
+ * Screw Pattern: Triangle layout (2 at top, 1 at bottom)
+ * Hardware: M5 screws (12-16mm) + M5 hex nuts
  *
  * Use the Customizer to select which example to view.
  */
@@ -16,15 +17,12 @@ use <components/joiners.scad>
 /* [Example Selection] */
 
 // Select which joiner example to display
-joiner_example = 1; // [1:Single Left Bracket (1U), 2:Single Right Bracket (1U), 3:Bracket Pair (1U), 4:Assembled View (1U), 5:Exploded View (1U), 6:2U Bracket Pair, 7:2U Assembled, 8:3U Bracket Pair, 9:Bracket Only (no faceplate), 10:All Sizes Comparison, 11:Print Layout - 1U Pair, 12:Print Layout - 2U Pair]
+joiner_example = 1; // [1:Single Left Wall (1U), 2:Single Right Wall (1U), 3:Wall Pair (1U), 4:Assembled View (1U), 5:Exploded View (1U), 6:2U Wall Pair, 7:2U Assembled, 8:3U Wall Pair, 9:Wall Only (no faceplate), 10:All Sizes Comparison, 11:Print Layout - 1U Pair, 12:Print Layout - 2U Pair]
 
 /* [Joiner Parameters] */
 
 // Faceplate section width (mm)
 faceplate_width = 60; // [40:10:120]
-
-// Distance from joint edge to bracket (mm)
-edge_offset = 5; // [0:1:20]
 
 // Detail level for curves
 detail_fn = 32; // [16:Low, 32:Medium, 64:High]
@@ -35,7 +33,7 @@ _dummy = 0;
 
 
 // ============================================================
-// EXAMPLE 1: Single Left Bracket (1U)
+// EXAMPLE 1: Single Left Wall (1U)
 // The side with screw clearance holes
 // ============================================================
 module example_single_left_1u()
@@ -44,7 +42,6 @@ module example_single_left_1u()
         faceplate_joiner_left(
             unit_height = 1,
             faceplate_width = faceplate_width,
-            edge_offset = edge_offset,
             include_faceplate = true,
             fn = detail_fn
         );
@@ -57,7 +54,7 @@ module example_single_left_1u()
 
 
 // ============================================================
-// EXAMPLE 2: Single Right Bracket (1U)
+// EXAMPLE 2: Single Right Wall (1U)
 // The side with hex nut pockets
 // ============================================================
 module example_single_right_1u()
@@ -66,7 +63,6 @@ module example_single_right_1u()
         faceplate_joiner_right(
             unit_height = 1,
             faceplate_width = faceplate_width,
-            edge_offset = edge_offset,
             include_faceplate = true,
             fn = detail_fn
         );
@@ -79,15 +75,14 @@ module example_single_right_1u()
 
 
 // ============================================================
-// EXAMPLE 3: Bracket Pair (1U)
-// Both left and right brackets side by side
+// EXAMPLE 3: Wall Pair (1U)
+// Both left and right walls side by side
 // ============================================================
 module example_pair_1u()
 {
     faceplate_joiner_pair(
         unit_height = 1,
         faceplate_width = faceplate_width,
-        edge_offset = edge_offset,
         spacing = 15,
         fn = detail_fn
     );
@@ -110,14 +105,13 @@ module example_pair_1u()
 
 // ============================================================
 // EXAMPLE 4: Assembled View (1U)
-// Shows how the brackets mate together
+// Shows how the walls mate face-to-face
 // ============================================================
 module example_assembled_1u()
 {
     faceplate_joiner_assembled(
         unit_height = 1,
         faceplate_width = faceplate_width,
-        edge_offset = edge_offset,
         explode = 0,
         fn = detail_fn
     );
@@ -138,7 +132,6 @@ module example_exploded_1u()
     faceplate_joiner_assembled(
         unit_height = 1,
         faceplate_width = faceplate_width,
-        edge_offset = edge_offset,
         explode = 30,
         fn = detail_fn
     );
@@ -156,15 +149,14 @@ module example_exploded_1u()
 
 
 // ============================================================
-// EXAMPLE 6: 2U Bracket Pair
-// Larger brackets with 6 screws (2 triangles)
+// EXAMPLE 6: 2U Wall Pair
+// Larger walls with 6 screws (2 triangles)
 // ============================================================
 module example_pair_2u()
 {
     faceplate_joiner_pair(
         unit_height = 2,
         faceplate_width = faceplate_width,
-        edge_offset = edge_offset,
         spacing = 15,
         fn = detail_fn
     );
@@ -185,7 +177,6 @@ module example_assembled_2u()
     faceplate_joiner_assembled(
         unit_height = 2,
         faceplate_width = faceplate_width,
-        edge_offset = edge_offset,
         explode = 0,
         fn = detail_fn
     );
@@ -198,15 +189,14 @@ module example_assembled_2u()
 
 
 // ============================================================
-// EXAMPLE 8: 3U Bracket Pair
-// Even larger brackets with 9 screws (3 triangles)
+// EXAMPLE 8: 3U Wall Pair
+// Even larger walls with 9 screws (3 triangles)
 // ============================================================
 module example_pair_3u()
 {
     faceplate_joiner_pair(
         unit_height = 3,
         faceplate_width = faceplate_width,
-        edge_offset = edge_offset,
         spacing = 15,
         fn = detail_fn
     );
@@ -219,29 +209,29 @@ module example_pair_3u()
 
 
 // ============================================================
-// EXAMPLE 9: Bracket Only (no faceplate)
-// Just the bracket portion for adding to existing designs
+// EXAMPLE 9: Wall Only (no faceplate)
+// Just the joiner wall for adding to existing designs
 // ============================================================
 module example_bracket_only()
 {
-    // Left bracket only
+    // Left wall only
     color("SteelBlue")
         translate([-25, 0, 0])
-            joiner_bracket_addon(unit_height = 1, side = "left", edge_offset = edge_offset, fn = detail_fn);
+            joiner_wall_addon(unit_height = 1, side = "left", fn = detail_fn);
 
-    // Right bracket only
+    // Right wall only
     color("Coral")
         translate([25, 0, 0])
-            joiner_bracket_addon(unit_height = 1, side = "right", edge_offset = edge_offset, fn = detail_fn);
+            joiner_wall_addon(unit_height = 1, side = "right", fn = detail_fn);
 
     // Labels
     %translate([-25, -35, 0])
         linear_extrude(1)
-            text("LEFT addon", size = 3, halign = "center");
+            text("LEFT wall", size = 3, halign = "center");
 
     %translate([25, -35, 0])
         linear_extrude(1)
-            text("RIGHT addon", size = 3, halign = "center");
+            text("RIGHT wall", size = 3, halign = "center");
 
     %translate([0, -45, 0])
         linear_extrude(1)
@@ -251,7 +241,7 @@ module example_bracket_only()
 
 // ============================================================
 // EXAMPLE 10: All Sizes Comparison
-// 1U, 2U, and 3U brackets side by side
+// 1U, 2U, and 3U walls side by side
 // ============================================================
 module example_size_comparison()
 {
@@ -293,7 +283,6 @@ module example_print_layout_1u()
             faceplate_joiner_left(
                 unit_height = 1,
                 faceplate_width = faceplate_width,
-                edge_offset = edge_offset,
                 include_faceplate = true,
                 fn = detail_fn
             );
@@ -303,7 +292,6 @@ module example_print_layout_1u()
             faceplate_joiner_right(
                 unit_height = 1,
                 faceplate_width = faceplate_width,
-                edge_offset = edge_offset,
                 include_faceplate = true,
                 fn = detail_fn
             );
@@ -321,7 +309,7 @@ module example_print_layout_1u()
 
 // ============================================================
 // EXAMPLE 12: Print Layout - 2U Pair
-// Optimized layout for 3D printing larger brackets
+// Optimized layout for 3D printing larger walls
 // ============================================================
 module example_print_layout_2u()
 {
@@ -331,7 +319,6 @@ module example_print_layout_2u()
             faceplate_joiner_left(
                 unit_height = 2,
                 faceplate_width = faceplate_width,
-                edge_offset = edge_offset,
                 include_faceplate = true,
                 fn = detail_fn
             );
@@ -341,7 +328,6 @@ module example_print_layout_2u()
             faceplate_joiner_right(
                 unit_height = 2,
                 faceplate_width = faceplate_width,
-                edge_offset = edge_offset,
                 include_faceplate = true,
                 fn = detail_fn
             );
