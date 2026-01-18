@@ -174,19 +174,18 @@ module _left_geometry() {
 
     difference() {
         union() {
-            // Faceplate base
-            translate([0, 0, 0])
-            _faceplate_section(left_width, rack_height, plate_thick);
+            // Faceplate base - rounded on ear side, flat on joint side
+            _faceplate_left(left_width, rack_height, plate_thick);
 
             // Left rack ear
             _rack_ear_left();
 
-            // Joining bracket (uses library joiner component)
+            // Joining wall (uses library joiner component)
             // Left half gets the "left" joiner with screw holes
+            // Oriented to face right (towards the joint)
             translate([left_width, 0, rack_height/2])
-            rotate([0, 0, 90])
-            rotate([90, 0, 0])
-            joiner_bracket_addon(unit_height = rack_u, side = "left");
+            rotate([90, 0, 90])
+            joiner_wall_addon(unit_height = rack_u, side = "left");
 
             // Device mount (extends behind faceplate in +Y direction)
             if (minisforum_enabled && minisforum_mount_type != "none") {
@@ -221,18 +220,18 @@ module _right_geometry() {
 
     difference() {
         union() {
-            // Faceplate base
-            _faceplate_section(right_width, rack_height, plate_thick);
+            // Faceplate base - flat on joint side, rounded on ear side
+            _faceplate_right(right_width, rack_height, plate_thick);
 
             // Right rack ear
             _rack_ear_right();
 
-            // Joining bracket (uses library joiner component)
+            // Joining wall (uses library joiner component)
             // Right half gets the "right" joiner with hex nut pockets
+            // Oriented to face left (towards the joint)
             translate([0, 0, rack_height/2])
-            rotate([0, 0, -90])
-            rotate([90, 0, 0])
-            joiner_bracket_addon(unit_height = rack_u, side = "right");
+            rotate([90, 0, -90])
+            joiner_wall_addon(unit_height = rack_u, side = "right");
 
             // UCG-Fiber mount (bottom)
             if (ucg_enabled && ucg_mount_type != "none") {
@@ -410,13 +409,38 @@ module _slzb_mount_structure(offset_x, offset_y) {
 // FACEPLATE AND CUTOUTS
 // ============================================================================
 
-module _faceplate_section(width, height, thickness) {
-    // Simple faceplate with rounded corners
-    minkowski() {
+// Left faceplate - rounded on left (ear side), flat on right (joint side)
+module _faceplate_left(width, height, thickness) {
+    hull() {
+        // Left side - rounded corners
         translate([corner_radius, 0, corner_radius])
-        cube([width - 2*corner_radius, thickness - 0.01, height - 2*corner_radius]);
         rotate([-90, 0, 0])
-        cylinder(r = corner_radius, h = 0.01, $fn = 32);
+        cylinder(r = corner_radius, h = thickness, $fn = 32);
+
+        translate([corner_radius, 0, height - corner_radius])
+        rotate([-90, 0, 0])
+        cylinder(r = corner_radius, h = thickness, $fn = 32);
+
+        // Right side - flat edge (joint side)
+        translate([width - eps, 0, 0])
+        cube([eps, thickness, height]);
+    }
+}
+
+// Right faceplate - flat on left (joint side), rounded on right (ear side)
+module _faceplate_right(width, height, thickness) {
+    hull() {
+        // Left side - flat edge (joint side)
+        cube([eps, thickness, height]);
+
+        // Right side - rounded corners
+        translate([width - corner_radius, 0, corner_radius])
+        rotate([-90, 0, 0])
+        cylinder(r = corner_radius, h = thickness, $fn = 32);
+
+        translate([width - corner_radius, 0, height - corner_radius])
+        rotate([-90, 0, 0])
+        cylinder(r = corner_radius, h = thickness, $fn = 32);
     }
 }
 
