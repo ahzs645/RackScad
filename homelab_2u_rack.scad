@@ -19,6 +19,7 @@ use <components/faceplate.scad>
 use <components/cage.scad>
 use <components/keystone.scad>
 use <components/joiners.scad>
+use <components/rack_ears.scad>
 use <rack_mounts/angle_bracket.scad>
 include <rack_mounts/common.scad>
 use <rack_mounts/enclosed_box.scad>
@@ -91,8 +92,14 @@ extra_support = false;
 // Faceplate thickness (mm)
 plate_thick = 4;
 
-// Corner radius for faceplate
-corner_radius = 5;
+// Corner radius for faceplate (0 for square corners)
+corner_radius = 0; // [0:10]
+
+// Rack ear style
+ear_style = "toolless"; // [toolless:Toolless Hooks (Ubiquiti-style), simple:Simple L-Bracket, fusion:Fusion Style Ears]
+
+// Ear thickness (for toolless/fusion styles)
+ear_thickness = 2.9;
 
 /* [Hidden] */
 $fn = 32;
@@ -487,38 +494,48 @@ module _slzb_mount_structure(offset_x, offset_y) {
 // FACEPLATE AND CUTOUTS
 // ============================================================================
 
-// Left faceplate - rounded on left (ear side), flat on right (joint side)
+// Left faceplate - optionally rounded on left (ear side), flat on right (joint side)
 module _faceplate_left(width, height, thickness) {
-    hull() {
-        // Left side - rounded corners
-        translate([corner_radius, 0, corner_radius])
-        rotate([-90, 0, 0])
-        cylinder(r = corner_radius, h = thickness, $fn = 32);
+    if (corner_radius > 0) {
+        hull() {
+            // Left side - rounded corners
+            translate([corner_radius, 0, corner_radius])
+            rotate([-90, 0, 0])
+            cylinder(r = corner_radius, h = thickness, $fn = 32);
 
-        translate([corner_radius, 0, height - corner_radius])
-        rotate([-90, 0, 0])
-        cylinder(r = corner_radius, h = thickness, $fn = 32);
+            translate([corner_radius, 0, height - corner_radius])
+            rotate([-90, 0, 0])
+            cylinder(r = corner_radius, h = thickness, $fn = 32);
 
-        // Right side - flat edge (joint side)
-        translate([width - eps, 0, 0])
-        cube([eps, thickness, height]);
+            // Right side - flat edge (joint side)
+            translate([width - eps, 0, 0])
+            cube([eps, thickness, height]);
+        }
+    } else {
+        // Square corners
+        cube([width, thickness, height]);
     }
 }
 
-// Right faceplate - flat on left (joint side), rounded on right (ear side)
+// Right faceplate - flat on left (joint side), optionally rounded on right (ear side)
 module _faceplate_right(width, height, thickness) {
-    hull() {
-        // Left side - flat edge (joint side)
-        cube([eps, thickness, height]);
+    if (corner_radius > 0) {
+        hull() {
+            // Left side - flat edge (joint side)
+            cube([eps, thickness, height]);
 
-        // Right side - rounded corners
-        translate([width - corner_radius, 0, corner_radius])
-        rotate([-90, 0, 0])
-        cylinder(r = corner_radius, h = thickness, $fn = 32);
+            // Right side - rounded corners
+            translate([width - corner_radius, 0, corner_radius])
+            rotate([-90, 0, 0])
+            cylinder(r = corner_radius, h = thickness, $fn = 32);
 
-        translate([width - corner_radius, 0, height - corner_radius])
-        rotate([-90, 0, 0])
-        cylinder(r = corner_radius, h = thickness, $fn = 32);
+            translate([width - corner_radius, 0, height - corner_radius])
+            rotate([-90, 0, 0])
+            cylinder(r = corner_radius, h = thickness, $fn = 32);
+        }
+    } else {
+        // Square corners
+        cube([width, thickness, height]);
     }
 }
 
@@ -529,22 +546,72 @@ module _device_cutout(w, h) {
 }
 
 // ============================================================================
-// RACK EARS
+// RACK EARS - Uses library modules from components/rack_ears.scad
 // ============================================================================
 
 module _rack_ear_left() {
-    translate([-ear_width, 0, 0])
-    difference() {
-        cube([ear_width + 5, plate_thick + 3, rack_height]);
-        _ear_holes(ear_width / 2);
+    if (ear_style == "toolless") {
+        // Toolless hooks (Example 18 style) - just the hook, no L-bracket
+        // Position at left edge, hook pointing left (-X), profile vertical (Z)
+        translate([-ear_thickness, 0, 0])
+        rotate([90, 0, 0])
+        mirror([1, 0, 0])
+        rotate([0, 90, 90])
+        rack_hook(thickness = ear_thickness);
+    } else if (ear_style == "fusion") {
+        // Fusion style ears with L-bracket (Example 17 style)
+        translate([0, 0, rack_height/2])
+        rotate([0, -90, 0])
+        rotate([90, 0, 0])
+        rack_ear_left(
+            thickness = ear_thickness,
+            side_width = rack_height,
+            side_height = 40,
+            bottom_depth = 22,
+            hole_radius = 2.25,
+            countersink = true,
+            toolless = false
+        );
+    } else {
+        // Simple L-bracket style (default)
+        translate([-ear_width, 0, 0])
+        difference() {
+            cube([ear_width + 5, plate_thick + 3, rack_height]);
+            _ear_holes(ear_width / 2);
+        }
     }
 }
 
 module _rack_ear_right() {
-    translate([right_width - 5, 0, 0])
-    difference() {
-        cube([ear_width + 5, plate_thick + 3, rack_height]);
-        _ear_holes(ear_width / 2 + 5);
+    if (ear_style == "toolless") {
+        // Toolless hooks (Example 18 style) - just the hook, no L-bracket
+        // Position at right edge, hook pointing right (+X), profile vertical (Z)
+        translate([right_width, 0, 0])
+        rotate([90, 0, 0])
+        rotate([0, 90, 90])
+        rack_hook(thickness = ear_thickness);
+    } else if (ear_style == "fusion") {
+        // Fusion style ears with L-bracket (Example 17 style)
+        translate([right_width, 0, rack_height/2])
+        rotate([0, 90, 0])
+        rotate([90, 0, 0])
+        mirror([1, 0, 0])
+        rack_ear_left(
+            thickness = ear_thickness,
+            side_width = rack_height,
+            side_height = 40,
+            bottom_depth = 22,
+            hole_radius = 2.25,
+            countersink = true,
+            toolless = false
+        );
+    } else {
+        // Simple L-bracket style (default)
+        translate([right_width - 5, 0, 0])
+        difference() {
+            cube([ear_width + 5, plate_thick + 3, rack_height]);
+            _ear_holes(ear_width / 2 + 5);
+        }
     }
 }
 
