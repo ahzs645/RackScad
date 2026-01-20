@@ -220,6 +220,7 @@ module back_plate(
     use_honeycomb = false,
     hex_dia = 8,
     hex_wall = 2,
+    vent_open = true,
     fn = 64
 )
 {
@@ -230,17 +231,21 @@ module back_plate(
         {
             cube([device_width + 2, device_height + 2, thickness], center=true);
 
-            vent_width = device_width - cutout_edge;
-            vent_height = device_height - cutout_edge;
+            // Only add ventilation cutout if vent_open is true
+            if (vent_open)
+            {
+                vent_width = device_width - cutout_edge;
+                vent_height = device_height - cutout_edge;
 
-            if (use_honeycomb)
-            {
-                honeycomb_cutout(vent_width, vent_height, thickness + 2, hex_dia, hex_wall);
-            }
-            else
-            {
-                translate([0, 0, -3 - (heavy_device > 0 ? 1 : 0)])
-                    four_rounded_corner_plate(vent_height, vent_width, thickness + 2, cutout_radius, fn);
+                if (use_honeycomb)
+                {
+                    honeycomb_cutout(vent_width, vent_height, thickness + 2, hex_dia, hex_wall);
+                }
+                else
+                {
+                    translate([0, 0, -3 - (heavy_device > 0 ? 1 : 0)])
+                        four_rounded_corner_plate(vent_height, vent_width, thickness + 2, cutout_radius, fn);
+                }
             }
         }
 }
@@ -320,6 +325,7 @@ module center_support(
  *   use_honeycomb - Use honeycomb pattern (false = rectangular cutouts)
  *   hex_dia - Honeycomb hole diameter (only used when use_honeycomb=true)
  *   hex_wall - Honeycomb wall thickness (only used when use_honeycomb=true)
+ *   back_open - Whether back plate has ventilation (true) or is solid (false)
  *   fn - Detail level
  */
 module cage_structure(
@@ -337,6 +343,7 @@ module cage_structure(
     use_honeycomb = false,
     hex_dia = 8,
     hex_wall = 2,
+    back_open = true,
     fn = 64
 )
 {
@@ -464,6 +471,7 @@ module cage_structure(
         use_honeycomb,
         hex_dia,
         hex_wall,
+        back_open,
         fn
     );
 }

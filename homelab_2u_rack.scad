@@ -92,6 +92,9 @@ hex_diameter = 8; // [4:12]
 // Honeycomb wall thickness (for Cage with Honeycomb)
 hex_wall = 2; // [1:4]
 
+// Add ventilation to back plate
+back_ventilation = false;
+
 // Add extra center support for wide devices
 extra_support = false;
 
@@ -334,7 +337,8 @@ module _device_mount_structure(dev_w, dev_h, dev_d, offset_x, offset_y, mount_ty
             is_split = false,
             use_honeycomb = true,
             hex_dia = hex_diameter,
-            hex_wall = hex_wall
+            hex_wall = hex_wall,
+            back_open = back_ventilation
         );
     } else if (mount_type == "cage_rect") {
         // Cage with rectangular slot ventilation (Example 7 style)
@@ -350,7 +354,8 @@ module _device_mount_structure(dev_w, dev_h, dev_d, offset_x, offset_y, mount_ty
             cutout_edge = 5,
             cutout_radius = 5,
             is_split = false,
-            use_honeycomb = false
+            use_honeycomb = false,
+            back_open = back_ventilation
         );
     } else if (mount_type == "enclosed") {
         // Enclosed box with side rails (Example 27 style)
