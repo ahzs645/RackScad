@@ -435,5 +435,321 @@ module custom_mount(
             wall, 0, "sides", plate_thick
         );
     }
+    else if (mount_type == "screw" || mount_type == "standoff") {
+        screw_mount_positioned(
+            offset_x, offset_y,
+            device_w, device_h, device_d,
+            [], 3, wall, 5, 6, plate_thick
+        );
+    }
     // Add more mount types here as needed
+}
+
+// ============================================================================
+// SCREW MOUNT
+// Mount plate with standoffs and screw holes for devices with mounting holes
+// Inspired by HomeRacker device_mount - great for SBCs, drives, etc.
+//
+// Parameters:
+//   device_w - Device width (footprint)
+//   device_d - Device depth (footprint)
+//   screw_positions - Array of [x, y] positions relative to device corner
+//   screw_diameter - Screw hole diameter (default 3mm for M3)
+//   thickness - Base plate thickness
+//   standoff_height - Height of standoffs (0 for flush mount)
+//   standoff_diameter - Outer diameter of standoffs
+// ============================================================================
+
+module screw_mount(
+    device_w,
+    device_d,
+    screw_positions = [],
+    screw_diameter = 3,
+    thickness = 3,
+    standoff_height = 5,
+    standoff_diameter = 6
+) {
+    margin = 10;  // Extra margin around device
+    plate_w = device_w + margin * 2;
+    plate_d = device_d + margin * 2;
+
+    difference() {
+        union() {
+            // Base plate
+            cube([plate_w, plate_d, thickness]);
+
+            // Standoffs
+            if (standoff_height > 0 && len(screw_positions) > 0) {
+                for (pos = screw_positions) {
+                    translate([margin + pos[0], margin + pos[1], thickness])
+                    cylinder(h = standoff_height, d = standoff_diameter, $fn = 24);
+                }
+            }
+        }
+
+        // Screw holes through plate and standoffs
+        for (pos = screw_positions) {
+            translate([margin + pos[0], margin + pos[1], -_CM_EPS])
+            cylinder(h = thickness + standoff_height + 2*_CM_EPS, d = screw_diameter, $fn = 16);
+        }
+
+        // Ventilation cutout in center (if device is large enough)
+        if (device_w > 50 && device_d > 50) {
+            vent_w = device_w - 30;
+            vent_d = device_d - 30;
+            translate([margin + 15, margin + 15, -_CM_EPS])
+            cube([vent_w, vent_d, thickness + 2*_CM_EPS]);
+        }
+    }
+}
+
+// Positioned version for rack generator
+module screw_mount_positioned(
+    offset_x,
+    offset_y,
+    device_w,
+    device_h,  // Note: device_h is the face height, device_d is depth
+    device_d,
+    screw_positions = [],
+    screw_diameter = 3,
+    thickness = 3,
+    standoff_height = 5,
+    standoff_diameter = 6,
+    plate_thick = 4
+) {
+    margin = 10;
+    plate_w = device_w + margin * 2;
+    plate_d = device_d + margin * 2;
+
+    translate([offset_x - plate_w/2, offset_y - device_h/2, plate_thick])
+    screw_mount(device_w, device_d, screw_positions, screw_diameter, thickness, standoff_height, standoff_diameter);
+}
+
+// ============================================================================
+// SBC MOUNT
+// Specialized mount for Single Board Computers using the SBC_MOUNT_PATTERNS
+// Automatically looks up screw positions from the device database
+//
+// Parameters:
+//   device_id - Device ID from devices.scad (e.g., "raspberry_pi_4")
+//   thickness - Base plate thickness
+//   standoff_override - Override standoff height (0 = use database default)
+// ============================================================================
+
+module sbc_mount(
+    device_w,
+    device_d,
+    screw_positions,
+    screw_size = 2.5,
+    standoff_height = 5,
+    thickness = 3
+) {
+    // Convert M2.5 to hole diameter (add 0.2mm clearance)
+    hole_dia = screw_size + 0.2;
+    standoff_dia = screw_size * 2 + 2;  // Standoff is ~2x screw + margin
+
+    screw_mount(
+        device_w, device_d,
+        screw_positions,
+        hole_dia,
+        thickness,
+        standoff_height,
+        standoff_dia
+    );
+}
+
+// ============================================================================
+// HDD MOUNT
+// Mount for 2.5" or 3.5" hard drives / SSDs
+// Uses standard SATA mounting hole patterns
+//
+// Parameters:
+//   drive_type - "25" for 2.5" or "35" for 3.5" drives
+//   thickness - Base plate thickness
+// ============================================================================
+
+module hdd_mount(
+    drive_type = "25",
+    thickness = 3
+) {
+    // 2.5" drive: 70mm x 100mm
+    // 3.5" drive: 101.6mm x 147mm
+
+    if (drive_type == "25") {
+        device_w = 70;
+        device_d = 100;
+        screw_positions = [
+            [3, 14],
+            [3 + 61.72, 14],
+            [3, 14 + 76.6],
+            [3 + 61.72, 14 + 76.6]
+        ];
+        screw_mount(device_w, device_d, screw_positions, 3.5, thickness, 0, 0);
+    }
+    else if (drive_type == "35") {
+        device_w = 101.6;
+        device_d = 147;
+        screw_positions = [
+            [3.18, 28.5],
+            [3.18 + 95.25, 28.5],
+            [3.18, 28.5 + 101.6],
+            [3.18 + 95.25, 28.5 + 101.6]
+        ];
+        screw_mount(device_w, device_d, screw_positions, 3.5, thickness, 0, 0);
+    }
+}
+
+// ============================================================================
+// VENTILATED SHELF
+// Shelf with ventilation slots and optional cable routing
+// Inspired by HomeRacker switch_shelf - great for network equipment
+//
+// Parameters:
+//   width - Shelf width
+//   depth - Shelf depth
+//   thickness - Base thickness
+//   lip_height - Height of retaining lips (0 for flat)
+//   lip_sides - [front, back, left, right] which sides get lips
+//   vent_slots - Add ventilation slots
+//   cable_slot - Add cable routing slot at back
+//   slot_length - Length of vent slots
+//   slot_width - Width of vent slots
+//   slot_spacing - Spacing between slots
+// ============================================================================
+
+module ventilated_shelf(
+    width,
+    depth,
+    thickness = 3,
+    lip_height = 5,
+    lip_sides = [false, true, true, true],  // [front, back, left, right]
+    vent_slots = true,
+    cable_slot = true,
+    slot_length = 40,
+    slot_width = 6,
+    slot_spacing_x = 50,
+    slot_spacing_y = 30
+) {
+    lip_thick = 2;
+    margin = 20;  // Margin from edges for vent slots
+
+    difference() {
+        union() {
+            // Base plate
+            cube([width, depth, thickness]);
+
+            // Lips
+            if (lip_height > 0) {
+                // Front lip
+                if (lip_sides[0])
+                    cube([width, lip_thick, thickness + lip_height]);
+
+                // Back lip
+                if (lip_sides[1])
+                    translate([0, depth - lip_thick, 0])
+                    cube([width, lip_thick, thickness + lip_height]);
+
+                // Left lip
+                if (lip_sides[2])
+                    cube([lip_thick, depth, thickness + lip_height]);
+
+                // Right lip
+                if (lip_sides[3])
+                    translate([width - lip_thick, 0, 0])
+                    cube([lip_thick, depth, thickness + lip_height]);
+            }
+        }
+
+        // Ventilation slots
+        if (vent_slots) {
+            for (x = [margin : slot_spacing_x : width - margin - slot_length]) {
+                for (y = [margin : slot_spacing_y : depth - margin]) {
+                    translate([x, y - slot_width/2, -_CM_EPS])
+                    cube([slot_length, slot_width, thickness + 2*_CM_EPS]);
+                }
+            }
+        }
+
+        // Cable routing slot at back
+        if (cable_slot) {
+            cable_w = min(width * 0.4, 120);
+            cable_d = 10;
+            translate([(width - cable_w)/2, depth - margin - cable_d, -_CM_EPS])
+            cube([cable_w, cable_d, thickness + 2*_CM_EPS]);
+        }
+    }
+}
+
+// Positioned version for rack generator
+module ventilated_shelf_positioned(
+    offset_x,
+    offset_y,
+    width,
+    depth,
+    thickness = 3,
+    lip_height = 5,
+    vent_slots = true,
+    cable_slot = true,
+    plate_thick = 4
+) {
+    translate([offset_x - width/2, offset_y, plate_thick])
+    ventilated_shelf(width, depth, thickness, lip_height,
+                     [false, true, true, true], vent_slots, cable_slot);
+}
+
+// ============================================================================
+// STORAGE TRAY
+// Deep tray with walls for storing loose items, cables, tools, etc.
+// Inspired by HomeRacker equipment_tray
+//
+// Parameters:
+//   width - Tray outer width
+//   depth - Tray outer depth
+//   wall_height - Height of tray walls
+//   wall_thickness - Thickness of walls
+//   base_thickness - Thickness of base
+//   dividers - Number of internal dividers (0 = none)
+// ============================================================================
+
+module storage_tray(
+    width,
+    depth,
+    wall_height = 30,
+    wall_thickness = 2,
+    base_thickness = 3,
+    dividers = 0
+) {
+    total_height = base_thickness + wall_height;
+
+    difference() {
+        // Outer shell
+        cube([width, depth, total_height]);
+
+        // Inner cavity
+        translate([wall_thickness, wall_thickness, base_thickness])
+        cube([width - wall_thickness*2, depth - wall_thickness*2, wall_height + _CM_EPS]);
+    }
+
+    // Optional dividers
+    if (dividers > 0) {
+        divider_spacing = (width - wall_thickness*2) / (dividers + 1);
+        for (i = [1 : dividers]) {
+            translate([wall_thickness + i * divider_spacing - wall_thickness/2, wall_thickness, base_thickness])
+            cube([wall_thickness, depth - wall_thickness*2, wall_height * 0.8]);
+        }
+    }
+}
+
+// Positioned version for rack generator
+module storage_tray_positioned(
+    offset_x,
+    offset_y,
+    width,
+    depth,
+    wall_height = 30,
+    dividers = 0,
+    plate_thick = 4
+) {
+    translate([offset_x - width/2, offset_y, plate_thick])
+    storage_tray(width, depth, wall_height, 2, 3, dividers);
 }

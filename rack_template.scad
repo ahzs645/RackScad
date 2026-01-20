@@ -28,8 +28,15 @@
  *   "angle"      - L-bracket style (good for access)
  *   "simple"     - Basic box (no vents)
  *   "passthrough"- Thin frame (for dongles/keystones)
- *   "tray"       - Open tray
+ *   "tray"       - Open tray with lips
+ *   "shelf"      - Ventilated shelf with cable routing
+ *   "storage"    - Deep storage tray for loose items
  *   "none"       - Cutout only
+ *
+ * Back plate options (back_style parameter):
+ *   "solid"  - Solid back plate
+ *   "vent"   - Ventilated back plate (default)
+ *   "none"   - No back plate (completely open)
  *
  * Positioning:
  *   offset_x: negative = left, positive = right (from center)
@@ -63,11 +70,13 @@ devices = [
 show_preview = true;
 show_labels = true;
 ear_style = "toolless"; // [toolless, fusion, simple, none]
+back_style = "vent"; // [solid:Solid, vent:Ventilated, none:Open (No Back)]
 
 rack_faceplate(
     rack_u = rack_u,
     devices = devices,
     ear_style = ear_style,
+    back_style = back_style,
     show_preview = show_preview,
     show_labels = show_labels
 );

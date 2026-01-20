@@ -326,6 +326,7 @@ module center_support(
  *   hex_dia - Honeycomb hole diameter (only used when use_honeycomb=true)
  *   hex_wall - Honeycomb wall thickness (only used when use_honeycomb=true)
  *   back_open - Whether back plate has ventilation (true) or is solid (false)
+ *   no_back - If true, completely removes the back plate (overrides back_open)
  *   fn - Detail level
  */
 module cage_structure(
@@ -344,6 +345,7 @@ module cage_structure(
     hex_dia = 8,
     hex_wall = 2,
     back_open = true,
+    no_back = false,
     fn = 64
 )
 {
@@ -457,23 +459,25 @@ module cage_structure(
         );
     }
 
-    // Back plate
-    back_plate(
-        offset_x,
-        offset_y,
-        device_width,
-        device_height,
-        device_depth,
-        device_clearance,
-        thickness,
-        cutout_edge,
-        cutout_radius,
-        use_honeycomb,
-        hex_dia,
-        hex_wall,
-        back_open,
-        fn
-    );
+    // Back plate (only if no_back is false)
+    if (!no_back) {
+        back_plate(
+            offset_x,
+            offset_y,
+            device_width,
+            device_height,
+            device_depth,
+            device_clearance,
+            thickness,
+            cutout_edge,
+            cutout_radius,
+            use_honeycomb,
+            hex_dia,
+            hex_wall,
+            back_open,
+            fn
+        );
+    }
 }
 
 /*

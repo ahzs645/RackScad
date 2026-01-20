@@ -93,7 +93,7 @@ function _get_dev_name(device_entry) =
 //   hex_diameter  - Honeycomb hole size
 //   hex_wall      - Honeycomb wall thickness
 //   heavy_device  - Wall thickness level (0, 1, 2)
-//   back_vent     - Enable back ventilation
+//   back_style    - Back plate style: "solid", "vent", "none"
 //   show_preview  - Show device preview boxes
 //   show_labels   - Show device labels
 // ============================================================================
@@ -110,7 +110,7 @@ module rack_faceplate(
     hex_diameter = _RG_DEFAULT_HEX_DIA,
     hex_wall = _RG_DEFAULT_HEX_WALL,
     heavy_device = _RG_DEFAULT_HEAVY,
-    back_vent = true,
+    back_style = "vent",  // "solid", "vent", "none"
     show_preview = true,
     show_labels = true
 ) {
@@ -147,7 +147,7 @@ module rack_faceplate(
                         heavy_device,
                         hex_diameter,
                         hex_wall,
-                        back_vent
+                        back_style
                     );
                 }
             }
@@ -198,7 +198,7 @@ module rack_faceplate_split(
     hex_diameter = _RG_DEFAULT_HEX_DIA,
     hex_wall = _RG_DEFAULT_HEX_WALL,
     heavy_device = _RG_DEFAULT_HEAVY,
-    back_vent = true,
+    back_style = true,
     show_preview = true,
     show_labels = true,
     render_part = "both"
@@ -219,7 +219,7 @@ module rack_faceplate_split(
             _rg_split_half_left(
                 rack_u, left_width, height, left_devices,
                 plate_thick, corner_radius, ear_style, ear_thickness, ear_position,
-                clearance, hex_diameter, hex_wall, heavy_device, back_vent,
+                clearance, hex_diameter, hex_wall, heavy_device, back_style,
                 show_preview, show_labels
             );
         } else {
@@ -227,7 +227,7 @@ module rack_faceplate_split(
             _rg_split_half_left(
                 rack_u, left_width, height, left_devices,
                 plate_thick, corner_radius, ear_style, ear_thickness, ear_position,
-                clearance, hex_diameter, hex_wall, heavy_device, back_vent,
+                clearance, hex_diameter, hex_wall, heavy_device, back_style,
                 show_preview, show_labels
             );
         }
@@ -243,7 +243,7 @@ module rack_faceplate_split(
             _rg_split_half_right(
                 rack_u, right_width, height, right_devices,
                 plate_thick, corner_radius, ear_style, ear_thickness, ear_position,
-                clearance, hex_diameter, hex_wall, heavy_device, back_vent,
+                clearance, hex_diameter, hex_wall, heavy_device, back_style,
                 show_preview, show_labels
             );
         } else {
@@ -251,7 +251,7 @@ module rack_faceplate_split(
             _rg_split_half_right(
                 rack_u, right_width, height, right_devices,
                 plate_thick, corner_radius, ear_style, ear_thickness, ear_position,
-                clearance, hex_diameter, hex_wall, heavy_device, back_vent,
+                clearance, hex_diameter, hex_wall, heavy_device, back_style,
                 show_preview, show_labels
             );
         }
@@ -376,6 +376,7 @@ module _rg_simple_ear_holes(x_pos, rack_u, plate_thick) {
 }
 
 // Device mount structure dispatcher
+// back_style: "solid" = solid back, "vent" = ventilated back, "none" = no back
 module _rg_device_mount(
     device_entry,
     plate_thick,
@@ -383,7 +384,7 @@ module _rg_device_mount(
     heavy,
     hex_dia,
     hex_wall,
-    back_vent
+    back_style
 ) {
     dev_w = _get_dev_w(device_entry);
     dev_h = _get_dev_h(device_entry);
@@ -391,6 +392,10 @@ module _rg_device_mount(
     offset_x = _get_dev_x(device_entry);
     offset_y = -_get_dev_y(device_entry);  // Flip Y for cage coords
     mount_type = _get_dev_mount(device_entry);
+
+    // Convert back_style string to cage parameters
+    _back_open = (back_style == "vent");
+    _no_back = (back_style == "none");
 
     if (mount_type == "cage") {
         cage_structure(
@@ -408,7 +413,8 @@ module _rg_device_mount(
             use_honeycomb = true,
             hex_dia = hex_dia,
             hex_wall = hex_wall,
-            back_open = back_vent
+            back_open = _back_open,
+            no_back = _no_back
         );
     }
     else if (mount_type == "cage_rect") {
@@ -425,7 +431,8 @@ module _rg_device_mount(
             cutout_radius = 5,
             is_split = false,
             use_honeycomb = false,
-            back_open = back_vent
+            back_open = _back_open,
+            no_back = _no_back
         );
     }
     else if (mount_type == "enclosed") {
@@ -452,6 +459,23 @@ module _rg_device_mount(
             offset_x, offset_y,
             dev_w, dev_h, dev_d,
             3, 0, "sides", plate_thick
+        );
+    }
+    else if (mount_type == "shelf") {
+        // Ventilated shelf with lips
+        ventilated_shelf_positioned(
+            offset_x, offset_y,
+            dev_w, dev_d,
+            3, 5, true, true, plate_thick
+        );
+    }
+    else if (mount_type == "storage" || mount_type == "storage_tray") {
+        // Deep storage tray
+        storage_tray_positioned(
+            offset_x, offset_y,
+            dev_w, dev_d,
+            dev_h,  // Use device height as wall height
+            0, plate_thick
         );
     }
 }
@@ -542,7 +566,7 @@ module _rg_preview_labels(devices, center_x, center_z) {
 module _rg_split_half_left(
     rack_u, width, height, devices,
     plate_thick, corner_radius, ear_style, ear_thickness, ear_position,
-    clearance, hex_dia, hex_wall, heavy, back_vent,
+    clearance, hex_dia, hex_wall, heavy, back_style,
     show_preview, show_labels
 ) {
     center_x = width / 2;
@@ -574,7 +598,7 @@ module _rg_split_half_left(
                     rotate([-90, 0, 0])
                     _rg_device_mount(
                         dev, plate_thick, clearance, heavy,
-                        hex_dia, hex_wall, back_vent
+                        hex_dia, hex_wall, back_style
                     );
                 }
             }
@@ -592,7 +616,7 @@ module _rg_split_half_left(
 module _rg_split_half_right(
     rack_u, width, height, devices,
     plate_thick, corner_radius, ear_style, ear_thickness, ear_position,
-    clearance, hex_dia, hex_wall, heavy, back_vent,
+    clearance, hex_dia, hex_wall, heavy, back_style,
     show_preview, show_labels
 ) {
     center_x = width / 2;
@@ -624,7 +648,7 @@ module _rg_split_half_right(
                     rotate([-90, 0, 0])
                     _rg_device_mount(
                         dev, plate_thick, clearance, heavy,
-                        hex_dia, hex_wall, back_vent
+                        hex_dia, hex_wall, back_style
                     );
                 }
             }

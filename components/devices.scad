@@ -151,3 +151,145 @@ USB_PASSTHROUGH = [13, 6, 20];           // USB-A passthrough
 USBC_PASSTHROUGH = [9, 3.5, 15];         // USB-C passthrough
 HDMI_PASSTHROUGH = [15, 6, 25];          // HDMI passthrough
 RJ45_PASSTHROUGH = [16, 14, 22];         // RJ45/Ethernet passthrough
+
+// ============================================================================
+// HARD DRIVE / SSD MOUNTING PATTERNS
+// Standard screw hole positions for storage drives
+// Format: [device_width, device_depth, [[x1,y1], [x2,y2], ...], screw_size, "name"]
+// Positions are from bottom-left corner of device
+// ============================================================================
+
+HDD_MOUNT_PATTERNS = [
+    // 2.5" drives (SSD, laptop HDD) - Standard SATA
+    // Device: 70mm x 100mm, M3 screws
+    ["hdd_25", 70, 100, [
+        [3, 14],              // Front left
+        [3 + 61.72, 14],      // Front right (61.72mm width spacing)
+        [3, 14 + 76.6],       // Back left (76.6mm depth spacing)
+        [3 + 61.72, 14 + 76.6] // Back right
+    ], 3, "2.5\" Drive"],
+
+    // 3.5" drives (Desktop HDD) - Standard SATA
+    // Device: 101.6mm x 147mm, M3 or 6-32 screws
+    ["hdd_35", 101.6, 147, [
+        [3.18, 28.5],           // Front left bottom
+        [3.18 + 95.25, 28.5],   // Front right bottom
+        [3.18, 28.5 + 101.6],   // Back left
+        [3.18 + 95.25, 28.5 + 101.6] // Back right
+    ], 3, "3.5\" Drive"],
+
+    // M.2 2280 (80mm length) - common SSD form factor
+    // Device: 22mm x 80mm, M2 screw
+    ["m2_2280", 22, 80, [
+        [11, 77]               // Single screw at end
+    ], 2, "M.2 2280 SSD"],
+
+    // M.2 2242 (42mm length)
+    ["m2_2242", 22, 42, [
+        [11, 39]
+    ], 2, "M.2 2242 SSD"],
+];
+
+// ============================================================================
+// SBC (Single Board Computer) MOUNTING PATTERNS
+// Screw hole positions for common SBCs
+// Format: [device_id, [[x1,y1], [x2,y2], ...], screw_size, standoff_height]
+// Positions are from bottom-left corner of PCB
+// ============================================================================
+
+SBC_MOUNT_PATTERNS = [
+    // Raspberry Pi 4/3 B+ - 85mm x 56mm, M2.5 screws
+    // Holes are 3.5mm from edges, 58mm x 49mm spacing
+    ["raspberry_pi_4", [
+        [3.5, 3.5],
+        [3.5 + 58, 3.5],
+        [3.5, 3.5 + 49],
+        [3.5 + 58, 3.5 + 49]
+    ], 2.5, 5],
+
+    // Raspberry Pi 5 - same as Pi 4
+    ["raspberry_pi_5", [
+        [3.5, 3.5],
+        [3.5 + 58, 3.5],
+        [3.5, 3.5 + 49],
+        [3.5 + 58, 3.5 + 49]
+    ], 2.5, 5],
+
+    // Raspberry Pi Zero 2 W - 65mm x 30mm, M2.5 screws
+    // Holes at corners, 58mm x 23mm spacing
+    ["raspberry_pi_zero_2w", [
+        [3.5, 3.5],
+        [3.5 + 58, 3.5],
+        [3.5, 3.5 + 23],
+        [3.5 + 58, 3.5 + 23]
+    ], 2.5, 3],
+
+    // Orange Pi 5 - 100mm x 62mm, M2.5 screws
+    ["orange_pi_5", [
+        [4, 4],
+        [4 + 92, 4],
+        [4, 4 + 54],
+        [4 + 92, 4 + 54]
+    ], 2.5, 5],
+
+    // Rock 5B - 100mm x 72mm, M2.5 screws
+    ["rock_5b", [
+        [4, 4],
+        [4 + 92, 4],
+        [4, 4 + 64],
+        [4 + 92, 4 + 64]
+    ], 2.5, 5],
+
+    // ODROID-H3+ - 110mm x 110mm, M3 screws
+    ["odroid_h3_plus", [
+        [5, 5],
+        [5 + 100, 5],
+        [5, 5 + 100],
+        [5 + 100, 5 + 100]
+    ], 3, 6],
+
+    // Intel NUC (standard) - 117mm x 112mm, M3 screws
+    // VESA mount pattern: 75mm or 100mm
+    ["intel_nuc_11", [
+        [21, 18.5],
+        [21 + 75, 18.5],
+        [21, 18.5 + 75],
+        [21 + 75, 18.5 + 75]
+    ], 3, 0],
+
+    ["intel_nuc_12", [
+        [21, 18.5],
+        [21 + 75, 18.5],
+        [21, 18.5 + 75],
+        [21 + 75, 18.5 + 75]
+    ], 3, 0],
+];
+
+// ============================================================================
+// MOUNTING PATTERN HELPER FUNCTIONS
+// ============================================================================
+
+// Get HDD mount pattern by ID
+function get_hdd_pattern(pattern_id) =
+    let(idx = search([pattern_id], HDD_MOUNT_PATTERNS))
+    len(idx) > 0 && idx[0] < len(HDD_MOUNT_PATTERNS) ? HDD_MOUNT_PATTERNS[idx[0]] : undef;
+
+// Get SBC mount pattern by device ID
+function get_sbc_pattern(device_id) =
+    let(idx = search([device_id], SBC_MOUNT_PATTERNS))
+    len(idx) > 0 && idx[0] < len(SBC_MOUNT_PATTERNS) ? SBC_MOUNT_PATTERNS[idx[0]] : undef;
+
+// Get screw positions for a device (returns array of [x,y] positions)
+function get_screw_positions(device_id) =
+    let(sbc = get_sbc_pattern(device_id))
+    sbc != undef ? sbc[1] : [];
+
+// Get screw size for a device
+function get_screw_size(device_id) =
+    let(sbc = get_sbc_pattern(device_id))
+    sbc != undef ? sbc[2] : 3;
+
+// Get recommended standoff height for a device
+function get_standoff_height(device_id) =
+    let(sbc = get_sbc_pattern(device_id))
+    sbc != undef ? sbc[3] : 5;

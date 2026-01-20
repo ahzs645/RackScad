@@ -51,8 +51,8 @@ hex_size = 8; // [4:12]
 // Honeycomb wall thickness
 hex_wall = 2; // [1:4]
 
-// Back ventilation
-back_vent = true;
+// Back plate style
+back_style = "vent"; // [solid:Solid Back, vent:Ventilated Back, none:No Back (Open)]
 
 /* [Split Settings] */
 // Split position (0 = auto center)
@@ -69,7 +69,7 @@ $fn = 32;
 //    or   ["custom", offset_x, offset_y, mount_type, [width, height, depth], "Name"]
 //
 // Mount types: "cage", "cage_rect", "enclosed", "angle", "simple",
-//              "passthrough", "tray", "none"
+//              "passthrough", "tray", "shelf", "storage", "none"
 // ============================================================================
 
 // Example 1: Single piece rack with multiple devices
@@ -86,6 +86,15 @@ single_piece_devices = [
     // Custom device with manual dimensions
     ["custom", 130, -15, "simple", [30, 25, 50], "Custom Box"],
 ];
+
+// Example with shelf and storage tray (uncomment to try)
+// shelf_example_devices = [
+//     // Ventilated shelf for a switch (uses width x depth)
+//     ["custom", 0, 0, "shelf", [200, 120, 30], "Switch Shelf"],
+//
+//     // Storage tray for cables/tools (height becomes wall height)
+//     ["custom", -150, 0, "storage", [80, 100, 25], "Cable Tray"],
+// ];
 
 // Example 2: Split rack - Left half devices
 left_half_devices = [
@@ -125,7 +134,7 @@ if (render_mode == "single") {
         clearance = clearance,
         hex_diameter = hex_size,
         hex_wall = hex_wall,
-        back_vent = back_vent,
+        back_style = back_style,
         show_preview = show_previews,
         show_labels = show_labels
     );
@@ -145,7 +154,7 @@ else {
         clearance = clearance,
         hex_diameter = hex_size,
         hex_wall = hex_wall,
-        back_vent = back_vent,
+        back_style = back_style,
         show_preview = show_previews,
         show_labels = show_labels,
         render_part = render_mode
