@@ -96,14 +96,25 @@ device3_custom_name = "Device 3";
 // Back plate style
 back_style = "vent"; // [solid:Solid Back, vent:Ventilated Back, none:No Back (Open)]
 
-// Honeycomb hole size (for cage mount)
+// Wall thickness (0=standard 4mm, 1=thick 5mm, 2=extra thick 6mm)
+heavy_device = 0; // [0:Standard (4mm), 1:Thick (5mm), 2:Extra Thick (6mm)]
+
+// Device clearance
+clearance = 1.0; // [0.5:0.1:2.0]
+
+/* [Ventilation - Honeycomb (for "cage" mount)] */
+// Honeycomb hole diameter
 hex_size = 8; // [4:1:12]
 
 // Honeycomb wall thickness
 hex_wall = 2; // [1:1:4]
 
-// Device clearance
-clearance = 1.0; // [0.5:0.1:2.0]
+/* [Ventilation - Rectangular (for "cage_rect" mount)] */
+// Edge margin around cutouts (smaller = larger holes, like Example 7)
+cutout_edge = 3; // [2:1:15]
+
+// Corner radius of rectangular cutouts
+cutout_radius = 3; // [2:1:15]
 
 /* [Display Options] */
 // Show device preview boxes
@@ -152,9 +163,12 @@ rack_faceplate(
     ear_style = ear_style,
     ear_position = ear_position,
     back_style = back_style,
+    heavy_device = heavy_device,
     clearance = clearance,
     hex_diameter = hex_size,
     hex_wall = hex_wall,
+    cutout_edge = cutout_edge,
+    cutout_radius = cutout_radius,
     show_preview = show_preview,
     show_labels = show_labels
 );

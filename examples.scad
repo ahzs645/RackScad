@@ -184,6 +184,7 @@ module example_fan_cutout_complete()
 // ============================================================
 module example_cage_structure()
 {
+    // Rectangular ventilation with large cutouts near edges
     cage_structure(
         offset_x = 0,
         offset_y = 0,
@@ -193,8 +194,8 @@ module example_cage_structure()
         device_clearance = 1,
         heavy_device = 0,
         extra_support = false,
-        cutout_edge = 5,
-        cutout_radius = 5,
+        cutout_edge = 3,       // Small margin = larger cutouts
+        cutout_radius = 3,     // Small corner radius
         is_split = false,
         use_honeycomb = false  // Rectangular ventilation
     );

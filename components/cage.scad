@@ -83,19 +83,21 @@ module side_plate(
                 two_rounded_corner_plate(height, depth, thickness, support_radius, fn);
 
                 // Add ventilation if device is deep enough
-                if (device_depth > 30 + cutout_radius)
+                // Use cutout_edge to control margins (smaller = larger cutouts)
+                if (device_depth > 20 + cutout_edge)
                 {
-                    vent_width = device_depth - 16 - cutout_edge;
-                    vent_height = device_height - 8;
+                    // Reduced margins: 6mm for reinforcing block connection area
+                    vent_width = device_depth - 6 - cutout_edge;
+                    vent_height = device_height - cutout_edge;
 
                     if (use_honeycomb)
                     {
-                        translate([4, 0, thickness/2])
+                        translate([2, 0, thickness/2])
                             honeycomb_cutout(vent_width, vent_height, thickness + 2, hex_dia, hex_wall);
                     }
                     else
                     {
-                        translate([4, 0, -1])
+                        translate([2, 0, -1])
                             four_rounded_corner_plate(vent_height, vent_width, thickness + 2, cutout_radius, fn);
                     }
                 }
@@ -148,40 +150,43 @@ module top_bottom_plate(
             {
                 two_rounded_corner_plate(width, depth, thickness, support_radius, fn);
 
-                if (device_depth > 30 + cutout_radius)
+                // Use cutout_edge to control margins (smaller = larger cutouts)
+                if (device_depth > 20 + cutout_edge)
                 {
-                    vent_depth = device_depth - 16 - cutout_edge;
+                    // Reduced margins: 6mm for reinforcing block connection area
+                    vent_depth = device_depth - 6 - cutout_edge;
 
                     if (!extra_support)
                     {
-                        vent_width = device_width - 8;
+                        vent_width = device_width - cutout_edge;
                         if (use_honeycomb)
                         {
-                            translate([4, 0, thickness/2])
+                            translate([2, 0, thickness/2])
                                 honeycomb_cutout(vent_depth, vent_width, thickness + 2, hex_dia, hex_wall);
                         }
                         else
                         {
-                            translate([4, 0, -1])
+                            translate([2, 0, -1])
                                 four_rounded_corner_plate(vent_width, vent_depth, thickness + 2, cutout_radius, fn);
                         }
                     }
                     else
                     {
-                        // Split cutout for extra support
-                        vent_width = (device_width - 8) / 2 - 16;
+                        // Split cutout for extra support - two smaller vents with center bar
+                        vent_width = (device_width - cutout_edge) / 2 - 8;
+                        vent_offset = (device_width - cutout_edge) / 4 + 4;
                         if (use_honeycomb)
                         {
-                            translate([4, (device_width - 8) / 4 + 8, thickness/2])
+                            translate([2, vent_offset, thickness/2])
                                 honeycomb_cutout(vent_depth, vent_width, thickness + 2, hex_dia, hex_wall);
-                            translate([4, -(device_width - 8) / 4 - 8, thickness/2])
+                            translate([2, -vent_offset, thickness/2])
                                 honeycomb_cutout(vent_depth, vent_width, thickness + 2, hex_dia, hex_wall);
                         }
                         else
                         {
-                            translate([4, (device_width - 8) / 4 + 8, -1])
+                            translate([2, vent_offset, -1])
                                 four_rounded_corner_plate(vent_width, vent_depth, thickness + 2, cutout_radius, fn);
-                            translate([4, -(device_width - 8) / 4 - 8, -1])
+                            translate([2, -vent_offset, -1])
                                 four_rounded_corner_plate(vent_width, vent_depth, thickness + 2, cutout_radius, fn);
                         }
                     }

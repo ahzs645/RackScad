@@ -54,6 +54,13 @@ hex_wall = 2; // [1:4]
 // Back plate style
 back_style = "vent"; // [solid:Solid Back, vent:Ventilated Back, none:No Back (Open)]
 
+/* [Rectangular Vents (for cage_rect)] */
+// Edge margin around cutouts (smaller = larger holes)
+cutout_edge = 3; // [2:1:15]
+
+// Corner radius of rectangular cutouts
+cutout_radius = 3; // [2:1:15]
+
 /* [Split Settings] */
 // Split position (0 = auto center)
 split_position = 180;
@@ -135,6 +142,8 @@ if (render_mode == "single") {
         hex_diameter = hex_size,
         hex_wall = hex_wall,
         back_style = back_style,
+        cutout_edge = cutout_edge,
+        cutout_radius = cutout_radius,
         show_preview = show_previews,
         show_labels = show_labels
     );
@@ -155,6 +164,8 @@ else {
         hex_diameter = hex_size,
         hex_wall = hex_wall,
         back_style = back_style,
+        cutout_edge = cutout_edge,
+        cutout_radius = cutout_radius,
         show_preview = show_previews,
         show_labels = show_labels,
         render_part = render_mode

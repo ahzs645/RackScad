@@ -94,6 +94,8 @@ function _get_dev_name(device_entry) =
 //   hex_wall      - Honeycomb wall thickness
 //   heavy_device  - Wall thickness level (0, 1, 2)
 //   back_style    - Back plate style: "solid", "vent", "none"
+//   cutout_edge   - Edge margin for rectangular vent cutouts
+//   cutout_radius - Corner radius for rectangular vent cutouts
 //   show_preview  - Show device preview boxes
 //   show_labels   - Show device labels
 // ============================================================================
@@ -111,6 +113,8 @@ module rack_faceplate(
     hex_wall = _RG_DEFAULT_HEX_WALL,
     heavy_device = _RG_DEFAULT_HEAVY,
     back_style = "vent",  // "solid", "vent", "none"
+    cutout_edge = 5,
+    cutout_radius = 5,
     show_preview = true,
     show_labels = true
 ) {
@@ -147,7 +151,9 @@ module rack_faceplate(
                         heavy_device,
                         hex_diameter,
                         hex_wall,
-                        back_style
+                        back_style,
+                        cutout_edge,
+                        cutout_radius
                     );
                 }
             }
@@ -198,7 +204,9 @@ module rack_faceplate_split(
     hex_diameter = _RG_DEFAULT_HEX_DIA,
     hex_wall = _RG_DEFAULT_HEX_WALL,
     heavy_device = _RG_DEFAULT_HEAVY,
-    back_style = true,
+    back_style = "vent",
+    cutout_edge = 5,
+    cutout_radius = 5,
     show_preview = true,
     show_labels = true,
     render_part = "both"
@@ -220,7 +228,7 @@ module rack_faceplate_split(
                 rack_u, left_width, height, left_devices,
                 plate_thick, corner_radius, ear_style, ear_thickness, ear_position,
                 clearance, hex_diameter, hex_wall, heavy_device, back_style,
-                show_preview, show_labels
+                cutout_edge, cutout_radius, show_preview, show_labels
             );
         } else {
             color("SteelBlue")
@@ -228,7 +236,7 @@ module rack_faceplate_split(
                 rack_u, left_width, height, left_devices,
                 plate_thick, corner_radius, ear_style, ear_thickness, ear_position,
                 clearance, hex_diameter, hex_wall, heavy_device, back_style,
-                show_preview, show_labels
+                cutout_edge, cutout_radius, show_preview, show_labels
             );
         }
     }
@@ -244,7 +252,7 @@ module rack_faceplate_split(
                 rack_u, right_width, height, right_devices,
                 plate_thick, corner_radius, ear_style, ear_thickness, ear_position,
                 clearance, hex_diameter, hex_wall, heavy_device, back_style,
-                show_preview, show_labels
+                cutout_edge, cutout_radius, show_preview, show_labels
             );
         } else {
             color("Coral")
@@ -252,7 +260,7 @@ module rack_faceplate_split(
                 rack_u, right_width, height, right_devices,
                 plate_thick, corner_radius, ear_style, ear_thickness, ear_position,
                 clearance, hex_diameter, hex_wall, heavy_device, back_style,
-                show_preview, show_labels
+                cutout_edge, cutout_radius, show_preview, show_labels
             );
         }
     }
@@ -384,7 +392,9 @@ module _rg_device_mount(
     heavy,
     hex_dia,
     hex_wall,
-    back_style
+    back_style,
+    cutout_edge = 5,
+    cutout_radius = 5
 ) {
     dev_w = _get_dev_w(device_entry);
     dev_h = _get_dev_h(device_entry);
@@ -407,8 +417,8 @@ module _rg_device_mount(
             device_clearance = clearance,
             heavy_device = heavy,
             extra_support = false,
-            cutout_edge = 5,
-            cutout_radius = 5,
+            cutout_edge = cutout_edge,
+            cutout_radius = cutout_radius,
             is_split = false,
             use_honeycomb = true,
             hex_dia = hex_dia,
@@ -427,8 +437,8 @@ module _rg_device_mount(
             device_clearance = clearance,
             heavy_device = heavy,
             extra_support = false,
-            cutout_edge = 5,
-            cutout_radius = 5,
+            cutout_edge = cutout_edge,
+            cutout_radius = cutout_radius,
             is_split = false,
             use_honeycomb = false,
             back_open = _back_open,
@@ -567,7 +577,7 @@ module _rg_split_half_left(
     rack_u, width, height, devices,
     plate_thick, corner_radius, ear_style, ear_thickness, ear_position,
     clearance, hex_dia, hex_wall, heavy, back_style,
-    show_preview, show_labels
+    cutout_edge, cutout_radius, show_preview, show_labels
 ) {
     center_x = width / 2;
     center_z = height / 2;
@@ -598,7 +608,8 @@ module _rg_split_half_left(
                     rotate([-90, 0, 0])
                     _rg_device_mount(
                         dev, plate_thick, clearance, heavy,
-                        hex_dia, hex_wall, back_style
+                        hex_dia, hex_wall, back_style,
+                        cutout_edge, cutout_radius
                     );
                 }
             }
@@ -617,7 +628,7 @@ module _rg_split_half_right(
     rack_u, width, height, devices,
     plate_thick, corner_radius, ear_style, ear_thickness, ear_position,
     clearance, hex_dia, hex_wall, heavy, back_style,
-    show_preview, show_labels
+    cutout_edge, cutout_radius, show_preview, show_labels
 ) {
     center_x = width / 2;
     center_z = height / 2;
@@ -648,7 +659,8 @@ module _rg_split_half_right(
                     rotate([-90, 0, 0])
                     _rg_device_mount(
                         dev, plate_thick, clearance, heavy,
-                        hex_dia, hex_wall, back_style
+                        hex_dia, hex_wall, back_style,
+                        cutout_edge, cutout_radius
                     );
                 }
             }
