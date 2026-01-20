@@ -101,9 +101,15 @@ ear_style = "toolless"; // [toolless:Toolless Hooks (Ubiquiti-style), simple:Sim
 // Ear thickness (for toolless/fusion styles)
 ear_thickness = 2.9;
 
+// Vertical position of rack ears
+ear_position = "bottom"; // [bottom:Bottom, top:Top, center:Center]
+
 /* [Hidden] */
 $fn = 32;
 eps = 0.01;
+
+// Toolless hook height (from backplate_profile: 32.65 - 2.25)
+hook_height = 30.4;
 
 // ============================================================================
 // 19" RACK CONSTANTS (EIA-310)
@@ -550,10 +556,14 @@ module _device_cutout(w, h) {
 // ============================================================================
 
 module _rack_ear_left() {
+    // Calculate Z offset based on ear_position
+    ear_z_offset = (ear_position == "top") ? rack_height - hook_height :
+                   (ear_position == "center") ? (rack_height - hook_height) / 2 : 0;
+
     if (ear_style == "toolless") {
         // Toolless hooks (Example 18 style) - just the hook, no L-bracket
         // Position at left edge, hook pointing left (-X), profile vertical (Z)
-        translate([0, 0, 0])
+        translate([0, 0, ear_z_offset])
         rotate([90, 0, 0])
         mirror([1, 0, 0])
         rotate([0, 90, 90])
@@ -583,10 +593,14 @@ module _rack_ear_left() {
 }
 
 module _rack_ear_right() {
+    // Calculate Z offset based on ear_position
+    ear_z_offset = (ear_position == "top") ? rack_height - hook_height :
+                   (ear_position == "center") ? (rack_height - hook_height) / 2 : 0;
+
     if (ear_style == "toolless") {
         // Toolless hooks (Example 18 style) - just the hook, no L-bracket
         // Position at right edge, hook pointing right (+X), profile vertical (Z)
-        translate([right_width, 0, 0])
+        translate([right_width, 0, ear_z_offset])
         rotate([90, 0, 0])
         rotate([0, 90, 90])
         rack_hook(thickness = ear_thickness);
