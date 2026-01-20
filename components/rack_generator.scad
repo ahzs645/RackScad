@@ -22,6 +22,7 @@
  * Mount Types:
  *   - "cage"       : Full cage with honeycomb ventilation (cage_structure)
  *   - "cage_rect"  : Full cage with rectangular slot ventilation
+ *   - "cage_open"  : Open cage - just side walls, no front block (like Example 7)
  *   - "enclosed"   : Enclosed box with side rails
  *   - "angle"      : L-bracket style sides
  *   - "simple"     : Basic box enclosure
@@ -443,6 +444,27 @@ module _rg_device_mount(
             use_honeycomb = false,
             back_open = _back_open,
             no_back = _no_back
+        );
+    }
+    else if (mount_type == "cage_open" || mount_type == "open") {
+        // Open cage - side walls only, no front reinforcing block
+        cage_structure(
+            offset_x = offset_x,
+            offset_y = offset_y,
+            device_width = dev_w,
+            device_height = dev_h,
+            device_depth = dev_d,
+            device_clearance = clearance,
+            heavy_device = heavy,
+            extra_support = false,
+            cutout_edge = cutout_edge,
+            cutout_radius = cutout_radius,
+            is_split = false,
+            use_honeycomb = false,
+            back_open = _back_open,
+            no_back = _no_back,
+            open_frame = false,
+            no_front = true
         );
     }
     else if (mount_type == "enclosed") {

@@ -71,12 +71,13 @@ module side_plate(
     use_honeycomb = false,
     hex_dia = 8,
     hex_wall = 2,
+    front_offset = 11,
     fn = 64
 )
 {
     heavy_offset = thickness > 4 ? 2 : 0;
 
-    translate([offset_x, offset_y, (depth / 2) + 11 + heavy_offset])
+    translate([offset_x, offset_y, (depth / 2) + front_offset + heavy_offset])
         rotate([90, 90, 90])
             difference()
             {
@@ -139,12 +140,13 @@ module top_bottom_plate(
     use_honeycomb = false,
     hex_dia = 8,
     hex_wall = 2,
+    front_offset = 11,
     fn = 64
 )
 {
     heavy_device = thickness - 4;
 
-    translate([offset_x, offset_y, (depth / 2) + 11 + heavy_device])
+    translate([offset_x, offset_y, (depth / 2) + front_offset + heavy_device])
         rotate([0, 90, 90])
             difference()
             {
@@ -332,6 +334,8 @@ module center_support(
  *   hex_wall - Honeycomb wall thickness (only used when use_honeycomb=true)
  *   back_open - Whether back plate has ventilation (true) or is solid (false)
  *   no_back - If true, completely removes the back plate (overrides back_open)
+ *   open_frame - If true, removes side/top/bottom plates (just reinforcing block + back)
+ *   no_front - If true, removes the reinforcing block at the front
  *   fn - Detail level
  */
 module cage_structure(
@@ -351,6 +355,8 @@ module cage_structure(
     hex_wall = 2,
     back_open = true,
     no_back = false,
+    open_frame = false,
+    no_front = false,
     fn = 64
 )
 {
@@ -360,108 +366,121 @@ module cage_structure(
     total_width = device_width + 16 + (heavy_device * 2);
     total_height = device_height + 16 + (heavy_device * 2);
 
-    // Reinforcing block behind faceplate with device opening cut through
-    difference()
-    {
-        reinforcing_block(offset_x, offset_y, total_width, total_height, heavy_device);
+    // Front offset: 11mm normally (for reinforcing block), 0 when no_front
+    _front_offset = no_front ? 0 : 11;
 
-        // Cut the device opening through the reinforcing block
-        translate([offset_x, offset_y, 7.5 + (heavy_device > 0 ? 2 : 0)])
-            cube([device_width + device_clearance, device_height + device_clearance, 12], center=true);
+    // Reinforcing block behind faceplate with device opening cut through
+    // Skip if no_front is true (for simple cage without front block)
+    if (!no_front) {
+        difference()
+        {
+            reinforcing_block(offset_x, offset_y, total_width, total_height, heavy_device);
+
+            // Cut the device opening through the reinforcing block
+            translate([offset_x, offset_y, 7.5 + (heavy_device > 0 ? 2 : 0)])
+                cube([device_width + device_clearance, device_height + device_clearance, 12], center=true);
+        }
     }
 
-    // Left side plate
-    side_plate(
-        offset_x - (device_width + device_clearance) / 2 - thickness - 0.001,
-        offset_y,
-        total_height,
-        device_depth + device_clearance,
-        thickness,
-        device_height,
-        device_depth,
-        cutout_edge,
-        cutout_radius,
-        support_radius,
-        true,
-        use_honeycomb,
-        hex_dia,
-        hex_wall,
-        fn
-    );
-
-    // Right side plate
-    side_plate(
-        offset_x + (device_width + device_clearance) / 2 + 0.001,
-        offset_y,
-        total_height,
-        device_depth + device_clearance,
-        thickness,
-        device_height,
-        device_depth,
-        cutout_edge,
-        cutout_radius,
-        support_radius,
-        false,
-        use_honeycomb,
-        hex_dia,
-        hex_wall,
-        fn
-    );
-
-    // Top plate
-    top_bottom_plate(
-        offset_x,
-        (device_height + device_clearance) / 2 + 0.001 + offset_y,
-        total_width,
-        device_depth + device_clearance,
-        thickness,
-        device_width,
-        device_depth,
-        cutout_edge,
-        cutout_radius,
-        support_radius,
-        extra_support,
-        use_honeycomb,
-        hex_dia,
-        hex_wall,
-        fn
-    );
-
-    // Bottom plate
-    top_bottom_plate(
-        offset_x,
-        -(device_height + device_clearance) / 2 - thickness - 0.001 + offset_y,
-        total_width,
-        device_depth + device_clearance,
-        thickness,
-        device_width,
-        device_depth,
-        cutout_edge,
-        cutout_radius,
-        support_radius,
-        extra_support,
-        use_honeycomb,
-        hex_dia,
-        hex_wall,
-        fn
-    );
-
-    // Extra center supports if enabled
-    if (extra_support)
-    {
-        center_support(
-            offset_x,
+    // Side and top/bottom plates (skip if open_frame is true)
+    if (!open_frame) {
+        // Left side plate
+        side_plate(
+            offset_x - (device_width + device_clearance) / 2 - thickness - 0.001,
             offset_y,
             total_height,
-            device_depth,
-            device_clearance,
-            device_width,
-            device_height,
+            device_depth + device_clearance,
             thickness,
+            device_height,
+            device_depth,
+            cutout_edge,
+            cutout_radius,
             support_radius,
-            is_split,
+            true,
+            use_honeycomb,
+            hex_dia,
+            hex_wall,
+            _front_offset,
             fn
         );
+
+        // Right side plate
+        side_plate(
+            offset_x + (device_width + device_clearance) / 2 + 0.001,
+            offset_y,
+            total_height,
+            device_depth + device_clearance,
+            thickness,
+            device_height,
+            device_depth,
+            cutout_edge,
+            cutout_radius,
+            support_radius,
+            false,
+            use_honeycomb,
+            hex_dia,
+            hex_wall,
+            _front_offset,
+            fn
+        );
+
+        // Top plate
+        top_bottom_plate(
+            offset_x,
+            (device_height + device_clearance) / 2 + 0.001 + offset_y,
+            total_width,
+            device_depth + device_clearance,
+            thickness,
+            device_width,
+            device_depth,
+            cutout_edge,
+            cutout_radius,
+            support_radius,
+            extra_support,
+            use_honeycomb,
+            hex_dia,
+            hex_wall,
+            _front_offset,
+            fn
+        );
+
+        // Bottom plate
+        top_bottom_plate(
+            offset_x,
+            -(device_height + device_clearance) / 2 - thickness - 0.001 + offset_y,
+            total_width,
+            device_depth + device_clearance,
+            thickness,
+            device_width,
+            device_depth,
+            cutout_edge,
+            cutout_radius,
+            support_radius,
+            extra_support,
+            use_honeycomb,
+            hex_dia,
+            hex_wall,
+            _front_offset,
+            fn
+        );
+
+        // Extra center supports if enabled
+        if (extra_support)
+        {
+            center_support(
+                offset_x,
+                offset_y,
+                total_height,
+                device_depth,
+                device_clearance,
+                device_width,
+                device_height,
+                thickness,
+                support_radius,
+                is_split,
+                fn
+            );
+        }
     }
 
     // Back plate (only if no_back is false)

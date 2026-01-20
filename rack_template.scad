@@ -33,7 +33,7 @@ device1_enabled = true;
 device1_type = "raspberry_pi_5"; // [raspberry_pi_5:Raspberry Pi 5, raspberry_pi_4:Raspberry Pi 4, intel_nuc_11:Intel NUC 11, intel_nuc_12:Intel NUC 12, minisforum_um890:Minisforum UM890, minisforum_ms01:Minisforum MS-01, beelink_ser5:Beelink SER5, ucg_fiber:Ubiquiti UCG-Fiber, ucg_ultra:Ubiquiti UCG-Ultra, usw_flex_mini:Ubiquiti USW-Flex-Mini, usw_lite_8_poe:Ubiquiti USW-Lite-8-PoE, mikrotik_hex:MikroTik hEX, jetkvm:JetKVM, pikvm_v4_plus:PiKVM V4 Plus, lutron_caseta:Lutron Caseta, hue_bridge:Philips Hue Bridge, hubitat_c8:Hubitat C-8, home_assistant_yellow:HA Yellow, slzb_06:SLZB-06 Zigbee, sonoff_zbdongle_p:Sonoff ZBDongle-P, orange_pi_5:Orange Pi 5, odroid_h3_plus:ODROID-H3+, custom:Custom Device]
 
 // Mount type
-device1_mount = "cage"; // [cage:Cage - Honeycomb Vents, cage_rect:Cage - Rectangular Vents, enclosed:Enclosed Box with Rails, angle:Angle Brackets, simple:Simple Box, passthrough:Passthrough Frame, tray:Open Tray, shelf:Ventilated Shelf, storage:Storage Tray, none:Cutout Only]
+device1_mount = "cage"; // [cage:Cage - Honeycomb Vents, cage_rect:Cage - Rectangular Vents, cage_open:Cage - No Front Block, enclosed:Enclosed Box with Rails, angle:Angle Brackets, simple:Simple Box, passthrough:Passthrough Frame, tray:Open Tray, shelf:Ventilated Shelf, storage:Storage Tray, none:Cutout Only]
 
 // Horizontal position (negative=left, positive=right)
 device1_x = 0; // [-200:5:200]
@@ -56,7 +56,7 @@ device2_enabled = false;
 device2_type = "slzb_06"; // [raspberry_pi_5:Raspberry Pi 5, raspberry_pi_4:Raspberry Pi 4, intel_nuc_11:Intel NUC 11, intel_nuc_12:Intel NUC 12, minisforum_um890:Minisforum UM890, minisforum_ms01:Minisforum MS-01, beelink_ser5:Beelink SER5, ucg_fiber:Ubiquiti UCG-Fiber, ucg_ultra:Ubiquiti UCG-Ultra, usw_flex_mini:Ubiquiti USW-Flex-Mini, usw_lite_8_poe:Ubiquiti USW-Lite-8-PoE, mikrotik_hex:MikroTik hEX, jetkvm:JetKVM, pikvm_v4_plus:PiKVM V4 Plus, lutron_caseta:Lutron Caseta, hue_bridge:Philips Hue Bridge, hubitat_c8:Hubitat C-8, home_assistant_yellow:HA Yellow, slzb_06:SLZB-06 Zigbee, sonoff_zbdongle_p:Sonoff ZBDongle-P, orange_pi_5:Orange Pi 5, odroid_h3_plus:ODROID-H3+, custom:Custom Device]
 
 // Mount type
-device2_mount = "passthrough"; // [cage:Cage - Honeycomb Vents, cage_rect:Cage - Rectangular Vents, enclosed:Enclosed Box with Rails, angle:Angle Brackets, simple:Simple Box, passthrough:Passthrough Frame, tray:Open Tray, shelf:Ventilated Shelf, storage:Storage Tray, none:Cutout Only]
+device2_mount = "passthrough"; // [cage:Cage - Honeycomb Vents, cage_rect:Cage - Rectangular Vents, cage_open:Cage - No Front Block, enclosed:Enclosed Box with Rails, angle:Angle Brackets, simple:Simple Box, passthrough:Passthrough Frame, tray:Open Tray, shelf:Ventilated Shelf, storage:Storage Tray, none:Cutout Only]
 
 // Horizontal position
 device2_x = 100; // [-200:5:200]
@@ -78,7 +78,7 @@ device3_enabled = false;
 device3_type = "lutron_caseta"; // [raspberry_pi_5:Raspberry Pi 5, raspberry_pi_4:Raspberry Pi 4, intel_nuc_11:Intel NUC 11, intel_nuc_12:Intel NUC 12, minisforum_um890:Minisforum UM890, minisforum_ms01:Minisforum MS-01, beelink_ser5:Beelink SER5, ucg_fiber:Ubiquiti UCG-Fiber, ucg_ultra:Ubiquiti UCG-Ultra, usw_flex_mini:Ubiquiti USW-Flex-Mini, usw_lite_8_poe:Ubiquiti USW-Lite-8-PoE, mikrotik_hex:MikroTik hEX, jetkvm:JetKVM, pikvm_v4_plus:PiKVM V4 Plus, lutron_caseta:Lutron Caseta, hue_bridge:Philips Hue Bridge, hubitat_c8:Hubitat C-8, home_assistant_yellow:HA Yellow, slzb_06:SLZB-06 Zigbee, sonoff_zbdongle_p:Sonoff ZBDongle-P, orange_pi_5:Orange Pi 5, odroid_h3_plus:ODROID-H3+, custom:Custom Device]
 
 // Mount type
-device3_mount = "cage"; // [cage:Cage - Honeycomb Vents, cage_rect:Cage - Rectangular Vents, enclosed:Enclosed Box with Rails, angle:Angle Brackets, simple:Simple Box, passthrough:Passthrough Frame, tray:Open Tray, shelf:Ventilated Shelf, storage:Storage Tray, none:Cutout Only]
+device3_mount = "cage"; // [cage:Cage - Honeycomb Vents, cage_rect:Cage - Rectangular Vents, cage_open:Cage - No Front Block, enclosed:Enclosed Box with Rails, angle:Angle Brackets, simple:Simple Box, passthrough:Passthrough Frame, tray:Open Tray, shelf:Ventilated Shelf, storage:Storage Tray, none:Cutout Only]
 
 // Horizontal position
 device3_x = -100; // [-200:5:200]
