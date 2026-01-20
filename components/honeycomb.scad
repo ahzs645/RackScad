@@ -173,8 +173,8 @@ module honeycomb_cutout(width, height, thickness, hex_dia, hex_wall, hex_offset=
                 // Boundary rectangle
                 square([width, height], center=true);
 
-                // Hexagon pattern centered
-                translate([-width/2 - hex_offset[0], -height/2 - hex_offset[1]])
+                // Hexagon pattern centered - offset by hex_dia to ensure full coverage on all edges
+                translate([-width/2 - hex_dia - hex_offset[0], -height/2 - hex_dia - hex_offset[1]])
                     hexagon_pattern(width + hex_dia * 2, height + hex_dia * 2, hex_dia, hex_wall);
             }
         }

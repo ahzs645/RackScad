@@ -90,7 +90,7 @@ module side_plate(
 
                     if (use_honeycomb)
                     {
-                        translate([4, 0, -1])
+                        translate([4, 0, thickness/2])
                             honeycomb_cutout(vent_width, vent_height, thickness + 2, hex_dia, hex_wall);
                     }
                     else
@@ -157,7 +157,7 @@ module top_bottom_plate(
                         vent_width = device_width - 8;
                         if (use_honeycomb)
                         {
-                            translate([4, 0, -1])
+                            translate([4, 0, thickness/2])
                                 honeycomb_cutout(vent_depth, vent_width, thickness + 2, hex_dia, hex_wall);
                         }
                         else
@@ -172,9 +172,9 @@ module top_bottom_plate(
                         vent_width = (device_width - 8) / 2 - 16;
                         if (use_honeycomb)
                         {
-                            translate([4, (device_width - 8) / 4 + 8, -1])
+                            translate([4, (device_width - 8) / 4 + 8, thickness/2])
                                 honeycomb_cutout(vent_depth, vent_width, thickness + 2, hex_dia, hex_wall);
-                            translate([4, -(device_width - 8) / 4 - 8, -1])
+                            translate([4, -(device_width - 8) / 4 - 8, thickness/2])
                                 honeycomb_cutout(vent_depth, vent_width, thickness + 2, hex_dia, hex_wall);
                         }
                         else
