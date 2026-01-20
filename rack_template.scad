@@ -1,82 +1,169 @@
 /*
- * Rack Template - Copy this file to create a new rack mount
+ * Rack Template - Easy Rack Mount Creator
  *
- * Instructions:
- * 1. Copy this file and rename it (e.g., "my_network_rack.scad")
- * 2. Edit the devices list below with your devices
- * 3. Adjust rack_u for your desired height
- * 4. Render and print!
+ * Use the Customizer panel (View > Customizer) to configure your rack mount.
+ * Or copy this file and edit the values directly.
  *
- * Device Format:
- *   [device_id, offset_x, offset_y, mount_type]
- *
- * Available device_ids: (see components/devices.scad for full list)
- *   Mini PCs: "minisforum_um890", "intel_nuc_11", "beelink_ser5", etc.
- *   Network:  "ucg_fiber", "usw_flex_mini", "mikrotik_hex", etc.
- *   KVM:      "jetkvm", "pikvm_v4_plus", etc.
- *   Smart:    "lutron_caseta", "hue_bridge", "hubitat_c8", etc.
- *   Zigbee:   "slzb_06", "sonoff_zbdongle_p", "conbee_ii", etc.
- *   SBCs:     "raspberry_pi_5", "orange_pi_5", etc.
- *
- * Custom devices:
- *   ["custom", offset_x, offset_y, mount_type, [width, height, depth], "Name"]
- *
- * Mount types:
- *   "cage"       - Full cage with honeycomb vents (best for most devices)
- *   "cage_rect"  - Full cage with rectangular vents
- *   "enclosed"   - Enclosed box with side rails
- *   "angle"      - L-bracket style (good for access)
- *   "simple"     - Basic box (no vents)
- *   "passthrough"- Thin frame (for dongles/keystones)
- *   "tray"       - Open tray with lips
- *   "shelf"      - Ventilated shelf with cable routing
- *   "storage"    - Deep storage tray for loose items
- *   "none"       - Cutout only
- *
- * Back plate options (back_style parameter):
- *   "solid"  - Solid back plate
- *   "vent"   - Ventilated back plate (default)
- *   "none"   - No back plate (completely open)
- *
- * Positioning:
- *   offset_x: negative = left, positive = right (from center)
- *   offset_y: negative = down, positive = up (from center)
+ * For more advanced configurations with multiple devices,
+ * see test_rack_generator.scad for examples.
  */
 
 use <components/rack_generator.scad>
 include <components/devices.scad>
 
 // ============================================================================
-// CONFIGURATION - Edit these values
+// CUSTOMIZER - Use the panel on the right to configure
 // ============================================================================
 
+/* [Rack Settings] */
 // Rack height in units (1U = 44.45mm)
-rack_u = 2;
+rack_u = 2; // [1:1:6]
 
-// Your devices - EDIT THIS LIST
+// Rack ear style
+ear_style = "toolless"; // [toolless:Toolless Hooks, fusion:Fusion Style, simple:Simple L-Bracket, none:No Ears]
+
+// Ear vertical position
+ear_position = "bottom"; // [bottom:Bottom, top:Top, center:Center]
+
+/* [Device 1] */
+// Enable Device 1
+device1_enabled = true;
+
+// Select device (or use Custom for manual dimensions)
+device1_type = "raspberry_pi_5"; // [raspberry_pi_5:Raspberry Pi 5, raspberry_pi_4:Raspberry Pi 4, intel_nuc_11:Intel NUC 11, intel_nuc_12:Intel NUC 12, minisforum_um890:Minisforum UM890, minisforum_ms01:Minisforum MS-01, beelink_ser5:Beelink SER5, ucg_fiber:Ubiquiti UCG-Fiber, ucg_ultra:Ubiquiti UCG-Ultra, usw_flex_mini:Ubiquiti USW-Flex-Mini, usw_lite_8_poe:Ubiquiti USW-Lite-8-PoE, mikrotik_hex:MikroTik hEX, jetkvm:JetKVM, pikvm_v4_plus:PiKVM V4 Plus, lutron_caseta:Lutron Caseta, hue_bridge:Philips Hue Bridge, hubitat_c8:Hubitat C-8, home_assistant_yellow:HA Yellow, slzb_06:SLZB-06 Zigbee, sonoff_zbdongle_p:Sonoff ZBDongle-P, orange_pi_5:Orange Pi 5, odroid_h3_plus:ODROID-H3+, custom:Custom Device]
+
+// Mount type
+device1_mount = "cage"; // [cage:Cage - Honeycomb Vents, cage_rect:Cage - Rectangular Vents, enclosed:Enclosed Box with Rails, angle:Angle Brackets, simple:Simple Box, passthrough:Passthrough Frame, tray:Open Tray, shelf:Ventilated Shelf, storage:Storage Tray, none:Cutout Only]
+
+// Horizontal position (negative=left, positive=right)
+device1_x = 0; // [-200:5:200]
+
+// Vertical position (negative=down, positive=up)
+device1_y = 0; // [-40:5:40]
+
+/* [Device 1 - Custom Dimensions] */
+// Only used when device1_type = "custom"
+device1_custom_width = 100; // [20:5:300]
+device1_custom_height = 50; // [10:5:100]
+device1_custom_depth = 100; // [20:5:200]
+device1_custom_name = "My Device";
+
+/* [Device 2 (Optional)] */
+// Enable Device 2
+device2_enabled = false;
+
+// Select device
+device2_type = "slzb_06"; // [raspberry_pi_5:Raspberry Pi 5, raspberry_pi_4:Raspberry Pi 4, intel_nuc_11:Intel NUC 11, intel_nuc_12:Intel NUC 12, minisforum_um890:Minisforum UM890, minisforum_ms01:Minisforum MS-01, beelink_ser5:Beelink SER5, ucg_fiber:Ubiquiti UCG-Fiber, ucg_ultra:Ubiquiti UCG-Ultra, usw_flex_mini:Ubiquiti USW-Flex-Mini, usw_lite_8_poe:Ubiquiti USW-Lite-8-PoE, mikrotik_hex:MikroTik hEX, jetkvm:JetKVM, pikvm_v4_plus:PiKVM V4 Plus, lutron_caseta:Lutron Caseta, hue_bridge:Philips Hue Bridge, hubitat_c8:Hubitat C-8, home_assistant_yellow:HA Yellow, slzb_06:SLZB-06 Zigbee, sonoff_zbdongle_p:Sonoff ZBDongle-P, orange_pi_5:Orange Pi 5, odroid_h3_plus:ODROID-H3+, custom:Custom Device]
+
+// Mount type
+device2_mount = "passthrough"; // [cage:Cage - Honeycomb Vents, cage_rect:Cage - Rectangular Vents, enclosed:Enclosed Box with Rails, angle:Angle Brackets, simple:Simple Box, passthrough:Passthrough Frame, tray:Open Tray, shelf:Ventilated Shelf, storage:Storage Tray, none:Cutout Only]
+
+// Horizontal position
+device2_x = 100; // [-200:5:200]
+
+// Vertical position
+device2_y = 0; // [-40:5:40]
+
+/* [Device 2 - Custom Dimensions] */
+device2_custom_width = 50; // [20:5:300]
+device2_custom_height = 30; // [10:5:100]
+device2_custom_depth = 80; // [20:5:200]
+device2_custom_name = "Device 2";
+
+/* [Device 3 (Optional)] */
+// Enable Device 3
+device3_enabled = false;
+
+// Select device
+device3_type = "lutron_caseta"; // [raspberry_pi_5:Raspberry Pi 5, raspberry_pi_4:Raspberry Pi 4, intel_nuc_11:Intel NUC 11, intel_nuc_12:Intel NUC 12, minisforum_um890:Minisforum UM890, minisforum_ms01:Minisforum MS-01, beelink_ser5:Beelink SER5, ucg_fiber:Ubiquiti UCG-Fiber, ucg_ultra:Ubiquiti UCG-Ultra, usw_flex_mini:Ubiquiti USW-Flex-Mini, usw_lite_8_poe:Ubiquiti USW-Lite-8-PoE, mikrotik_hex:MikroTik hEX, jetkvm:JetKVM, pikvm_v4_plus:PiKVM V4 Plus, lutron_caseta:Lutron Caseta, hue_bridge:Philips Hue Bridge, hubitat_c8:Hubitat C-8, home_assistant_yellow:HA Yellow, slzb_06:SLZB-06 Zigbee, sonoff_zbdongle_p:Sonoff ZBDongle-P, orange_pi_5:Orange Pi 5, odroid_h3_plus:ODROID-H3+, custom:Custom Device]
+
+// Mount type
+device3_mount = "cage"; // [cage:Cage - Honeycomb Vents, cage_rect:Cage - Rectangular Vents, enclosed:Enclosed Box with Rails, angle:Angle Brackets, simple:Simple Box, passthrough:Passthrough Frame, tray:Open Tray, shelf:Ventilated Shelf, storage:Storage Tray, none:Cutout Only]
+
+// Horizontal position
+device3_x = -100; // [-200:5:200]
+
+// Vertical position
+device3_y = 0; // [-40:5:40]
+
+/* [Device 3 - Custom Dimensions] */
+device3_custom_width = 70; // [20:5:300]
+device3_custom_height = 40; // [10:5:100]
+device3_custom_depth = 70; // [20:5:200]
+device3_custom_name = "Device 3";
+
+/* [Cage Options] */
+// Back plate style
+back_style = "vent"; // [solid:Solid Back, vent:Ventilated Back, none:No Back (Open)]
+
+// Honeycomb hole size (for cage mount)
+hex_size = 8; // [4:1:12]
+
+// Honeycomb wall thickness
+hex_wall = 2; // [1:1:4]
+
+// Device clearance
+clearance = 1.0; // [0.5:0.1:2.0]
+
+/* [Display Options] */
+// Show device preview boxes
+show_preview = true;
+
+// Show device labels
+show_labels = true;
+
+/* [Hidden] */
+$fn = 32;
+
+// ============================================================================
+// BUILD DEVICE LIST FROM CUSTOMIZER
+// ============================================================================
+
+// Helper to build device entry
+function make_device(enabled, dtype, mount, x, y, cw, ch, cd, cname) =
+    enabled ? (
+        dtype == "custom"
+            ? ["custom", x, y, mount, [cw, ch, cd], cname]
+            : [dtype, x, y, mount]
+    ) : [];
+
+// Build the device list
+_dev1 = make_device(device1_enabled, device1_type, device1_mount, device1_x, device1_y,
+                    device1_custom_width, device1_custom_height, device1_custom_depth, device1_custom_name);
+_dev2 = make_device(device2_enabled, device2_type, device2_mount, device2_x, device2_y,
+                    device2_custom_width, device2_custom_height, device2_custom_depth, device2_custom_name);
+_dev3 = make_device(device3_enabled, device3_type, device3_mount, device3_x, device3_y,
+                    device3_custom_width, device3_custom_height, device3_custom_depth, device3_custom_name);
+
+// Combine enabled devices into list
 devices = [
-    // Example: Raspberry Pi centered
-    ["raspberry_pi_5", 0, 0, "cage"],
-
-    // Add more devices here...
-    // ["device_id", x_offset, y_offset, "mount_type"],
+    if (len(_dev1) > 0) _dev1,
+    if (len(_dev2) > 0) _dev2,
+    if (len(_dev3) > 0) _dev3,
 ];
 
 // ============================================================================
-// RENDER - Usually don't need to change below this line
+// RENDER
 // ============================================================================
-
-/* [Options] */
-show_preview = true;
-show_labels = true;
-ear_style = "toolless"; // [toolless, fusion, simple, none]
-back_style = "vent"; // [solid:Solid, vent:Ventilated, none:Open (No Back)]
 
 rack_faceplate(
     rack_u = rack_u,
     devices = devices,
     ear_style = ear_style,
+    ear_position = ear_position,
     back_style = back_style,
+    clearance = clearance,
+    hex_diameter = hex_size,
+    hex_wall = hex_wall,
     show_preview = show_preview,
     show_labels = show_labels
 );
+
+// ============================================================================
+// INFO
+// ============================================================================
+
+echo("=== Rack Template ===");
+echo(str("Rack: ", rack_u, "U (", rack_u * 44.45, "mm)"));
+echo(str("Devices: ", len(devices)));
+echo(str("Back: ", back_style));
