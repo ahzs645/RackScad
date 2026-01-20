@@ -17,6 +17,12 @@ _EAR_HOLE_RADIUS = 2.25;
 _EAR_COUNTERSINK_RADIUS = 4;
 _EAR_ROUNDING = 0.3;
 
+// Toolless hook dimensions (derived from backplate_profile polygon)
+// Profile Y range: 2.25 to 32.65 = 30.4mm total height
+HOOK_HEIGHT = 30.4;
+HOOK_MIN_Y = 2.25;
+HOOK_MAX_Y = 32.65;
+
 /*
  * Create a rounded cube (simplified version without BOSL2)
  *
@@ -405,4 +411,71 @@ module bottom_rack_hooks(
     translate([faceplate_width/2 - thickness, -faceplate_height/2, 0])
         rotate([0, 90, 90])
             rack_hook(thickness, fn);
+}
+
+/*
+ * Create a positioned toolless rack hook
+ * Allows vertical positioning relative to rack height
+ *
+ * Parameters:
+ *   thickness - material thickness
+ *   rack_height - total height of the faceplate (in mm)
+ *   position - "bottom", "top", or "center"
+ *   side - "left" or "right"
+ *   fn - detail level
+ *
+ * The hook is positioned in XZ plane:
+ *   - X: At 0 for left side, extends in -X; at 0 for right side, extends in +X
+ *   - Z: Positioned based on position parameter
+ */
+module positioned_rack_hook(
+    thickness = 2.9,
+    rack_height = 88.9,
+    position = "bottom",
+    side = "left",
+    fn = 32
+)
+{
+    // Calculate Z offset based on position
+    z_offset = (position == "top") ? rack_height - HOOK_HEIGHT :
+               (position == "center") ? (rack_height - HOOK_HEIGHT) / 2 : 0;
+
+    if (side == "left") {
+        translate([0, 0, z_offset])
+        rotate([90, 0, 0])
+        mirror([1, 0, 0])
+        rotate([0, 90, 90])
+        rack_hook(thickness, fn);
+    } else {
+        translate([0, 0, z_offset])
+        rotate([90, 0, 0])
+        rotate([0, 90, 90])
+        rack_hook(thickness, fn);
+    }
+}
+
+/*
+ * Create a pair of positioned toolless rack hooks
+ *
+ * Parameters:
+ *   thickness - material thickness
+ *   rack_height - total height of the faceplate (in mm)
+ *   panel_width - width between the hooks (for right side positioning)
+ *   position - "bottom", "top", or "center"
+ *   fn - detail level
+ */
+module positioned_rack_hooks_pair(
+    thickness = 2.9,
+    rack_height = 88.9,
+    panel_width = 450.85,
+    position = "bottom",
+    fn = 32
+)
+{
+    // Left hook at X=0
+    positioned_rack_hook(thickness, rack_height, position, "left", fn);
+
+    // Right hook at X=panel_width
+    translate([panel_width, 0, 0])
+    positioned_rack_hook(thickness, rack_height, position, "right", fn);
 }

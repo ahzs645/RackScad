@@ -16,6 +16,31 @@ EIA_SCREW_SPACING = [6.35, 22.225, 38.1];
 // Rack width options (inches to mm conversion factor)
 INCH_TO_MM = 25.4;
 
+// ============================================================================
+// EIA-310 RACK DIMENSIONS
+// ============================================================================
+
+// 19" Rack (most common)
+EIA_19_FACEPLATE_WIDTH = 482.6;        // 19" total width
+EIA_19_MOUNT_HOLE_SPACING = 450.85;    // 17.75" between mounting holes
+EIA_19_EAR_WIDTH = (EIA_19_FACEPLATE_WIDTH - EIA_19_MOUNT_HOLE_SPACING) / 2 + 8;
+EIA_19_PANEL_WIDTH = EIA_19_MOUNT_HOLE_SPACING;  // Usable width between ears
+
+// 10" Rack (half-width)
+EIA_10_FACEPLATE_WIDTH = 254.0;        // 10" total width
+EIA_10_MOUNT_HOLE_SPACING = 222.25;    // ~8.75" between mounting holes
+EIA_10_EAR_WIDTH = (EIA_10_FACEPLATE_WIDTH - EIA_10_MOUNT_HOLE_SPACING) / 2 + 8;
+EIA_10_PANEL_WIDTH = EIA_10_MOUNT_HOLE_SPACING;
+
+// 23" Rack (telco/broadcast)
+EIA_23_FACEPLATE_WIDTH = 584.2;        // 23" total width
+EIA_23_MOUNT_HOLE_SPACING = 552.45;    // ~21.75" between mounting holes
+EIA_23_EAR_WIDTH = (EIA_23_FACEPLATE_WIDTH - EIA_23_MOUNT_HOLE_SPACING) / 2 + 8;
+EIA_23_PANEL_WIDTH = EIA_23_MOUNT_HOLE_SPACING;
+
+// Helper function to calculate rack height from U count
+function rack_height(u) = u * EIA_UNIT_HEIGHT;
+
 // Faceplate ear options lookup table
 // [rack_width, ear_type]
 FACEPLATE_EAR_OPTIONS = [

@@ -22,6 +22,8 @@ use <components/joiners.scad>
 use <components/rack_ears.scad>
 use <rack_mounts/angle_bracket.scad>
 include <rack_mounts/common.scad>
+include <components/constants.scad>
+include <components/devices.scad>
 use <rack_mounts/enclosed_box.scad>
 
 // ============================================================================
@@ -38,39 +40,44 @@ show_previews = true;
 show_labels = true;
 
 /* [Device 1: Minisforum UM890 Pro] */
+// Device dimensions from library: get_device("minisforum_um890") = [128, 52, 126]
 minisforum_enabled = true;
 minisforum_mount_type = "cage"; // [cage:Cage with Honeycomb, cage_rect:Cage with Slots, enclosed:Enclosed Box (Side Rails), angle:Angle Brackets, simple:Simple Box, none:Cutout Only]
-minisforum_face_w = 128;  // Width (side to side)
-minisforum_face_h = 52;   // Height
-minisforum_depth = 126;   // Depth to back
+minisforum_face_w = device_width("minisforum_um890");   // 128mm
+minisforum_face_h = device_height("minisforum_um890");  // 52mm
+minisforum_depth = device_depth("minisforum_um890");    // 126mm
 
 /* [Device 2: UCG-Fiber] */
+// Device dimensions from library: get_device("ucg_fiber") = [213, 30, 128]
 ucg_enabled = true;
 ucg_mount_type = "cage"; // [cage:Cage with Honeycomb, cage_rect:Cage with Slots, enclosed:Enclosed Box (Side Rails), angle:Angle Brackets, simple:Simple Box, none:Cutout Only]
-ucg_face_w = 213;
-ucg_face_h = 30;
-ucg_depth = 128;
+ucg_face_w = device_width("ucg_fiber");   // 213mm
+ucg_face_h = device_height("ucg_fiber");  // 30mm
+ucg_depth = device_depth("ucg_fiber");    // 128mm
 
 /* [Device 3: JetKVM] */
+// Device dimensions from library: get_device("jetkvm") = [43, 31, 60]
 jetkvm_enabled = true;
 jetkvm_mount_type = "cage"; // [cage:Cage with Honeycomb, cage_rect:Cage with Slots, enclosed:Enclosed Box (Side Rails), angle:Angle Brackets, simple:Simple Box, none:Cutout Only]
-jetkvm_face_w = 43;
-jetkvm_face_h = 31;
-jetkvm_depth = 60;
+jetkvm_face_w = device_width("jetkvm");   // 43mm
+jetkvm_face_h = device_height("jetkvm");  // 31mm
+jetkvm_depth = device_depth("jetkvm");    // 60mm
 
 /* [Device 4: Lutron Caseta] */
+// Device dimensions from library: get_device("lutron_caseta") = [70, 31, 70]
 lutron_enabled = true;
 lutron_mount_type = "cage"; // [cage:Cage with Honeycomb, cage_rect:Cage with Slots, enclosed:Enclosed Box (Side Rails), angle:Angle Brackets, simple:Simple Box, none:Cutout Only]
-lutron_face_w = 70;
-lutron_face_h = 31;
-lutron_depth = 70;
+lutron_face_w = device_width("lutron_caseta");   // 70mm
+lutron_face_h = device_height("lutron_caseta");  // 31mm
+lutron_depth = device_depth("lutron_caseta");    // 70mm
 
 /* [Device 5: SLZB-06 Zigbee] */
+// Device dimensions from library: get_device("slzb_06") = [23.4, 20, 90]
 slzb_enabled = true;
 slzb_mount_type = "keystone"; // [keystone:Keystone Pass-through, simple:Simple Box, none:Cutout Only]
-slzb_slot_w = 23.4;
-slzb_slot_h = 20.0;
-slzb_holder_depth = 8.2;  // Thin keystone frame
+slzb_slot_w = device_width("slzb_06");   // 23.4mm (face width for keystone)
+slzb_slot_h = device_height("slzb_06");  // 20mm (face height for keystone)
+slzb_holder_depth = 8.2;  // Thin keystone frame (not full device depth)
 
 /* [Cage Settings] */
 // Device clearance inside cage (mm)
@@ -108,24 +115,19 @@ ear_position = "bottom"; // [bottom:Bottom, top:Top, center:Center]
 $fn = 32;
 eps = 0.01;
 
-// Toolless hook height (from backplate_profile: 32.65 - 2.25)
-hook_height = 30.4;
-
 // ============================================================================
-// 19" RACK CONSTANTS (EIA-310)
+// 19" RACK CONSTANTS (from library)
 // ============================================================================
 
-EIA_U = 44.45;
+// Rack unit configuration
 rack_u = 2;
-rack_height = rack_u * EIA_U;  // 88.9mm
+rack_height = rack_height(rack_u);  // Uses library function
 
-// Rack mounting
-rack_mount_hole_spacing = 450.85;  // 17.75"
-faceplate_width = 482.6;           // 19"
-ear_width = (faceplate_width - rack_mount_hole_spacing) / 2 + 8;
-
-// Internal panel width (between ears)
-panel_width = rack_mount_hole_spacing;
+// Use library constants for 19" rack
+faceplate_width = EIA_19_FACEPLATE_WIDTH;
+rack_mount_hole_spacing = EIA_19_MOUNT_HOLE_SPACING;
+ear_width = EIA_19_EAR_WIDTH;
+panel_width = EIA_19_PANEL_WIDTH;
 
 // Split point - asymmetric for UCG-Fiber
 left_width = 180;
@@ -556,18 +558,14 @@ module _device_cutout(w, h) {
 // ============================================================================
 
 module _rack_ear_left() {
-    // Calculate Z offset based on ear_position
-    ear_z_offset = (ear_position == "top") ? rack_height - hook_height :
-                   (ear_position == "center") ? (rack_height - hook_height) / 2 : 0;
-
     if (ear_style == "toolless") {
-        // Toolless hooks (Example 18 style) - just the hook, no L-bracket
-        // Position at left edge, hook pointing left (-X), profile vertical (Z)
-        translate([0, 0, ear_z_offset])
-        rotate([90, 0, 0])
-        mirror([1, 0, 0])
-        rotate([0, 90, 90])
-        rack_hook(thickness = ear_thickness);
+        // Toolless hooks - uses library positioned_rack_hook
+        positioned_rack_hook(
+            thickness = ear_thickness,
+            rack_height = rack_height,
+            position = ear_position,
+            side = "left"
+        );
     } else if (ear_style == "fusion") {
         // Fusion style ears with L-bracket (Example 17 style)
         translate([0, 0, rack_height/2])
@@ -593,17 +591,15 @@ module _rack_ear_left() {
 }
 
 module _rack_ear_right() {
-    // Calculate Z offset based on ear_position
-    ear_z_offset = (ear_position == "top") ? rack_height - hook_height :
-                   (ear_position == "center") ? (rack_height - hook_height) / 2 : 0;
-
     if (ear_style == "toolless") {
-        // Toolless hooks (Example 18 style) - just the hook, no L-bracket
-        // Position at right edge, hook pointing right (+X), profile vertical (Z)
-        translate([right_width, 0, ear_z_offset])
-        rotate([90, 0, 0])
-        rotate([0, 90, 90])
-        rack_hook(thickness = ear_thickness);
+        // Toolless hooks - uses library positioned_rack_hook
+        translate([right_width, 0, 0])
+        positioned_rack_hook(
+            thickness = ear_thickness,
+            rack_height = rack_height,
+            position = ear_position,
+            side = "right"
+        );
     } else if (ear_style == "fusion") {
         // Fusion style ears with L-bracket (Example 17 style)
         translate([right_width, 0, rack_height/2])
